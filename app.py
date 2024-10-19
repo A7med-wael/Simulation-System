@@ -37,7 +37,7 @@ class QueuingSystemGUI:
         file_frame = ttk.Frame(control_frame)
         file_frame.pack(fill="x", pady=5)
         ttk.Button(file_frame, text="Upload Data", command=self.upload_file).pack(side="left", padx=5)
-        ttk.Button(file_frame, text="Generate Random Customers", command=self.generate_customers).pack(side="left", padx=5)
+        ttk.Button(file_frame, text="Simulate the system", command=self.generate_customers).pack(side="left", padx=5)
         ttk.Button(file_frame, text="Save All Data", command=self.save_all_data).pack(side="left", padx=5)
         ttk.Button(file_frame, text="Clear All", command=self.clear_all_data).pack(side="left", padx=5)
 
