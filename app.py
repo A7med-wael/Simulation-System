@@ -4,6 +4,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import os
+import random
 
 class QueuingSystemGUI:
     def __init__(self, root):
@@ -13,12 +14,18 @@ class QueuingSystemGUI:
         
         # Initialize data storage
         self.data_file_path = "queuing_data.xlsx"
-        self.current_data = pd.DataFrame(columns=['Customer ID', 'Event Type', 'Clock Time', 'Service Time'])
-        
+        self.current_data = pd.DataFrame(columns=['Customer ID', 'Event Type', 'Clock Time', 'Service Code', 'Service Title', 'Service Duration'])
+
+        # Define service dictionary (service code -> title, duration)
+        self.services = {
+            'A': {'title': 'Consultation', 'duration': 5},
+            'B': {'title': 'Follow-up', 'duration': 3},
+            'C': {'title': 'Diagnostic', 'duration': 7}
+        }
+
         self.setup_gui()
 
     def setup_gui(self):
-        # Create main frames
         self.create_control_frame()
         self.create_data_frame()
         self.create_graph_frame()
@@ -27,53 +34,26 @@ class QueuingSystemGUI:
         control_frame = ttk.LabelFrame(self.root, text="Controls", padding="10")
         control_frame.pack(fill="x", padx=10, pady=5)
 
-        # File operations
         file_frame = ttk.Frame(control_frame)
         file_frame.pack(fill="x", pady=5)
-
         ttk.Button(file_frame, text="Upload Data", command=self.upload_file).pack(side="left", padx=5)
+        ttk.Button(file_frame, text="Generate Random Customers", command=self.generate_customers).pack(side="left", padx=5)
         ttk.Button(file_frame, text="Save All Data", command=self.save_all_data).pack(side="left", padx=5)
         ttk.Button(file_frame, text="Clear All", command=self.clear_all_data).pack(side="left", padx=5)
-
-        # Input frame
-        input_frame = ttk.Frame(control_frame)
-        input_frame.pack(fill="x", pady=10)
-
-        # Customer ID
-        ttk.Label(input_frame, text="Customer ID:").grid(row=0, column=0, padx=5, pady=5)
-        self.entry_customer_id = ttk.Entry(input_frame)
-        self.entry_customer_id.grid(row=0, column=1, padx=5, pady=5)
-
-        # Arrival Time
-        ttk.Label(input_frame, text="Arrival Time:").grid(row=0, column=2, padx=5, pady=5)
-        self.entry_arrival_time = ttk.Entry(input_frame)
-        self.entry_arrival_time.grid(row=0, column=3, padx=5, pady=5)
-
-        # Service Time
-        ttk.Label(input_frame, text="Service Time:").grid(row=0, column=4, padx=5, pady=5)
-        self.entry_service_time = ttk.Entry(input_frame)
-        self.entry_service_time.grid(row=0, column=5, padx=5, pady=5)
-
-        ttk.Button(input_frame, text="Add Customer", command=self.add_customer).grid(row=0, column=6, padx=5, pady=5)
 
     def create_data_frame(self):
         data_frame = ttk.LabelFrame(self.root, text="Customer Data", padding="10")
         data_frame.pack(fill="both", expand=True, padx=10, pady=5)
 
-        # Create Treeview
-        self.tree = ttk.Treeview(data_frame, columns=("Customer ID", "Event Type", "Clock Time", "Service Time"), 
-                                show="headings")
-        
-        # Set column headings
+        self.tree = ttk.Treeview(data_frame, columns=("Customer ID", "Event Type", "Clock Time", "Service Code", 
+                                                      "Service Title", "Service Duration"), show="headings")
+
         for col in self.tree["columns"]:
             self.tree.heading(col, text=col)
-            self.tree.column(col, width=100)
+            self.tree.column(col, width=120)
 
-        # Add scrollbar
         scrollbar = ttk.Scrollbar(data_frame, orient="vertical", command=self.tree.yview)
         self.tree.configure(yscrollcommand=scrollbar.set)
-
-        # Pack elements
         self.tree.pack(side="left", fill="both", expand=True)
         scrollbar.pack(side="right", fill="y")
 
@@ -81,92 +61,73 @@ class QueuingSystemGUI:
         self.graph_frame = ttk.LabelFrame(self.root, text="System State Graph", padding="10")
         self.graph_frame.pack(fill="both", expand=True, padx=10, pady=5)
 
-    def add_customer(self):
-        try:
-            customer_id = self.entry_customer_id.get()
-            arrival_time = int(self.entry_arrival_time.get())
-            service_time = int(self.entry_service_time.get())
-            departure_time = arrival_time + service_time
+    def generate_customers(self):
+        self.clear_all_data()
+
+        num_customers = 7
+        arrival_time = 0  # Start at time 0
+
+        for customer_id in range(1, num_customers + 1):
+            # Generate random interval and update arrival time
+            interval = random.randint(0, 3)
+            arrival_time += interval
+
+            # Assign a random service
+            service_code = random.choice(list(self.services.keys()))
+            service_title = self.services[service_code]['title']
+            service_duration = self.services[service_code]['duration']
+
+            # Calculate departure time
+            departure_time = arrival_time + service_duration
 
             # Add arrival event
-            arrival_data = {
-                'Customer ID': customer_id,
-                'Event Type': 'Arrival',
-                'Clock Time': arrival_time,
-                'Service Time': service_time
-            }
-            
+            self.add_event(customer_id, 'Arrival', arrival_time, service_code, service_title, service_duration)
+
             # Add departure event
-            departure_data = {
-                'Customer ID': customer_id,
-                'Event Type': 'Departure',
-                'Clock Time': departure_time,
-                'Service Time': service_time
-            }
+            self.add_event(customer_id, 'Departure', departure_time, service_code, service_title, service_duration)
 
-            # Add to DataFrame
-            self.current_data = pd.concat([self.current_data, 
-                                         pd.DataFrame([arrival_data, departure_data])], 
-                                         ignore_index=True)
+        self.update_tree()
+        self.update_graph()
 
-            # Update tree and graph
-            self.update_tree()
-            self.update_graph()
-            self.clear_entries()
-
-        except ValueError:
-            messagebox.showerror("Error", "Please enter valid numeric values for times.")
+    def add_event(self, customer_id, event_type, clock_time, service_code, service_title, service_duration):
+        event_data = {
+            'Customer ID': customer_id,
+            'Event Type': event_type,
+            'Clock Time': clock_time,
+            'Service Code': service_code,
+            'Service Title': service_title,
+            'Service Duration': service_duration
+        }
+        self.current_data = pd.concat([self.current_data, pd.DataFrame([event_data])], ignore_index=True)
 
     def update_tree(self):
-        # Clear existing items
         for item in self.tree.get_children():
             self.tree.delete(item)
-        
-        # Sort data by clock time
+
         sorted_data = self.current_data.sort_values('Clock Time')
-        
-        # Add sorted data to tree
         for _, row in sorted_data.iterrows():
             self.tree.insert("", "end", values=tuple(row))
 
     def update_graph(self):
-        # Clear existing graph
         for widget in self.graph_frame.winfo_children():
             widget.destroy()
 
         if len(self.current_data) > 0:
-            # Sort data by clock time
             sorted_data = self.current_data.sort_values('Clock Time')
-            
-            # Calculate customer count
             sorted_data['Count Change'] = sorted_data['Event Type'].map({'Arrival': 1, 'Departure': -1})
             sorted_data['Customers in System'] = sorted_data['Count Change'].cumsum()
 
-            # Create figure
             fig, ax = plt.subplots(figsize=(10, 4))
-            
-            # Plot the step graph
-            times = sorted_data['Clock Time'].tolist()
-            counts = sorted_data['Customers in System'].tolist()
-            
-            ax.step(times, counts, where='post', label='Customers in System', color='blue')
+            ax.step(sorted_data['Clock Time'], sorted_data['Customers in System'], where='post', label='Customers in System', color='blue')
             ax.grid(True, linestyle='--', alpha=0.7)
             ax.set_xlabel('Clock Time')
             ax.set_ylabel('Number of Customers')
             ax.set_title('System State Over Time')
-            
-            # Ensure y-axis shows integer values
             ax.yaxis.set_major_locator(plt.MaxNLocator(integer=True))
 
-            # Create canvas
             canvas = FigureCanvasTkAgg(fig, master=self.graph_frame)
             canvas.draw()
             canvas.get_tk_widget().pack(fill="both", expand=True)
-
-    def clear_entries(self):
-        self.entry_customer_id.delete(0, 'end')
-        self.entry_arrival_time.delete(0, 'end')
-        self.entry_service_time.delete(0, 'end')
 
     def upload_file(self):
         file_path = filedialog.askopenfilename(filetypes=[("Excel files", "*.xlsx"), ("CSV files", "*.csv")])
@@ -232,28 +193,20 @@ class QueuingSystemGUI:
             except Exception as e:
                 messagebox.showerror("Error", 
                     f"Error loading file: {str(e)}\n\nPlease ensure your file has the correct format.")
-
     def save_all_data(self):
         if len(self.current_data) > 0:
-            file_path = filedialog.asksaveasfilename(
-                defaultextension=".xlsx",
-                filetypes=[("Excel files", "*.xlsx"), ("CSV files", "*.csv")]
-            )
+            file_path = filedialog.asksaveasfilename(defaultextension=".xlsx", filetypes=[("Excel files", "*.xlsx"), ("CSV files", "*.csv")])
             if file_path:
                 try:
-                    if file_path.endswith('.xlsx'):
-                        self.current_data.to_excel(file_path, index=False)
-                    else:
-                        self.current_data.to_csv(file_path, index=False)
+                    self.current_data.to_excel(file_path, index=False) if file_path.endswith('.xlsx') else self.current_data.to_csv(file_path, index=False)
                     messagebox.showinfo("Success", "Data saved successfully!")
                 except Exception as e:
                     messagebox.showerror("Error", f"Error saving file: {str(e)}")
 
     def clear_all_data(self):
-        if messagebox.askyesno("Confirm", "Are you sure you want to clear all data?"):
-            self.current_data = pd.DataFrame(columns=['Customer ID', 'Event Type', 'Clock Time', 'Service Time'])
-            self.update_tree()
-            self.update_graph()
+        self.current_data = pd.DataFrame(columns=['Customer ID', 'Event Type', 'Clock Time', 'Service Code', 'Service Title', 'Service Duration'])
+        self.update_tree()
+        self.update_graph()
 
 if __name__ == "__main__":
     root = tk.Tk()
