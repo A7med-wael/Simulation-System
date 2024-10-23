@@ -3,9 +3,9 @@ from tkinter import ttk, filedialog, messagebox
 import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-import os
 import random
 from typing import Dict, Any
+import os
 
 class QueuingSystemGUI:
     def __init__(self, root: tk.Tk) -> None:
@@ -13,17 +13,20 @@ class QueuingSystemGUI:
         self.root = root
         self.root.title("Queuing System Simulation")
         self.root.geometry("1200x800")
-        
+
         # Configure style
         self.setup_style()
-        
+
         # Initialize data structures
         self.initialize_data()
-        
+
         # Create main container
         self.main_container = ttk.Frame(self.root, style="Custom.TFrame")
         self.main_container.pack(fill="both", expand=True, padx=10, pady=5)
-        
+
+        # Initialize control panel state
+        self.control_panel_visible = True
+
         # Setup GUI components
         self.setup_gui()
 
@@ -33,6 +36,59 @@ class QueuingSystemGUI:
         style.configure("TLabelframe", padding=10)
         style.configure("TButton", padding=5)
         style.configure("Custom.TFrame", background="#f0f0f0")
+        style.configure("Toggle.TButton", padding=5, width=3)
+
+    def setup_gui(self) -> None:
+        """Setup the main GUI components."""
+        # Create toggle button outside of left panel
+        self.create_toggle_button()
+
+        # Create main panels
+        self.left_panel_container = ttk.Frame(self.main_container)
+        self.left_panel_container.pack(side="left", fill="y", padx=(0, 5))
+
+        self.left_panel = ttk.Frame(self.left_panel_container)
+        self.left_panel.pack(side="top", fill="y", expand=True)
+
+        self.right_panel = ttk.Frame(self.main_container)
+        self.right_panel.pack(side="right", fill="both", expand=True)
+
+        # Add controls and forms to the left panel
+        self.create_control_frame(self.left_panel)
+        self.create_service_form(self.left_panel)
+
+        # Add data and tables to the right panel
+        self.create_data_frame(self.right_panel)
+        self.create_chronological_table(self.right_panel)
+        self.create_graph_frame(self.right_panel)
+
+    def create_toggle_button(self) -> None:
+        """Create the toggle button for the control panel."""
+        toggle_frame = ttk.Frame(self.main_container)  # Place it in main container
+        toggle_frame.pack(side="left", fill="y", pady=5)
+
+        self.toggle_button = ttk.Button(
+            toggle_frame,
+            text="≡",  # Three horizontal lines
+            style="Toggle.TButton",
+            command=self.toggle_control_panel
+        )
+        self.toggle_button.pack(anchor="center")
+
+        # Optional: Add a tooltip for the toggle button
+        self.create_tooltip(self.toggle_button, "Toggle Control Panel")
+
+    def toggle_control_panel(self) -> None:
+        """Toggle the visibility of the control panel."""
+        if self.control_panel_visible:
+            self.left_panel_container.pack_forget()  # Hide the entire left panel container
+        else:
+            self.left_panel_container.pack(side="left", fill="y", padx=(0, 5))  # Show it again
+
+        self.control_panel_visible = not self.control_panel_visible
+
+        # Update toggle button text
+        self.toggle_button.configure(text="≡" if self.control_panel_visible else "☰")
 
     def initialize_data(self) -> None:
         """Initialize data structures."""
@@ -42,23 +98,6 @@ class QueuingSystemGUI:
             'Service Code', 'Service Title', 'Service Duration', 'End Time'
         ])
         self.services: Dict[str, Dict[str, Any]] = {}
-
-    def setup_gui(self) -> None:
-        """Setup the main GUI components."""
-        # Create left panel
-        left_panel = ttk.Frame(self.main_container)
-        left_panel.pack(side="left", fill="y", padx=(0, 5))
-        
-        # Create right panel
-        right_panel = ttk.Frame(self.main_container)
-        right_panel.pack(side="right", fill="both", expand=True)
-        
-        # Setup GUI components
-        self.create_control_frame(left_panel)
-        self.create_service_form(left_panel)
-        self.create_data_frame(right_panel)
-        self.create_chronological_table(right_panel)
-        self.create_graph_frame(right_panel)
 
     def create_control_frame(self, parent: ttk.Frame) -> None:
         """Create the control buttons frame."""
@@ -77,6 +116,30 @@ class QueuingSystemGUI:
             btn.pack(pady=2)
             self.create_tooltip(btn, tooltip)
 
+    # Remaining code for creating forms, tables, graphs, and other methods
+
+    def create_tooltip(self, widget: ttk.Widget, text: str) -> None:
+        """Create a tooltip for a widget."""
+        def enter(event):
+            tooltip = tk.Toplevel()
+            tooltip.wm_overrideredirect(True)
+            tooltip.wm_geometry(f"+{event.x_root+10}+{event.y_root+10}")
+
+            label = ttk.Label(tooltip, text=text, background="#ffffe0", relief="solid", borderwidth=1)
+            label.pack()
+
+            widget.tooltip = tooltip
+
+        def leave(event):
+            if hasattr(widget, "tooltip"):
+                widget.tooltip.destroy()
+                delattr(widget, "tooltip")
+
+        widget.bind("<Enter>", enter)
+        widget.bind("<Leave>", leave)
+
+    # Additional methods for generating customers, updating displays, etc.
+    
     def create_service_form(self, parent: ttk.Frame) -> None:
         """Create the service input form."""
         form_frame = ttk.LabelFrame(parent, text="Add New Service", padding="10")
@@ -156,25 +219,7 @@ class QueuingSystemGUI:
         y_scrollbar.pack(side="right", fill="y")
         widget.pack(side="left", fill="both", expand=True)
 
-    def create_tooltip(self, widget: ttk.Widget, text: str) -> None:
-        """Create a tooltip for a widget."""
-        def enter(event):
-            tooltip = tk.Toplevel()
-            tooltip.wm_overrideredirect(True)
-            tooltip.wm_geometry(f"+{event.x_root+10}+{event.y_root+10}")
-            
-            label = ttk.Label(tooltip, text=text, background="#ffffe0", relief="solid", borderwidth=1)
-            label.pack()
-            
-            widget.tooltip = tooltip
 
-        def leave(event):
-            if hasattr(widget, "tooltip"):
-                widget.tooltip.destroy()
-                delattr(widget, "tooltip")
-
-        widget.bind("<Enter>", enter)
-        widget.bind("<Leave>", leave)
 
     def add_service(self) -> None:
         """Add a new service to the system."""
@@ -476,3 +521,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
