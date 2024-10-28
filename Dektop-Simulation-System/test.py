@@ -24,6 +24,7 @@ class QueuingSystemGUI:
         self.main_container = ttk.Frame(self.root, style="Custom.TFrame")
         self.main_container.pack(fill="both", expand=True, padx=10, pady=5)
 
+        self.show_probability_columns = False
         # Initialize control panel state
         self.control_panel_visible = True
 
@@ -81,13 +82,16 @@ class QueuingSystemGUI:
     def toggle_control_panel(self) -> None:
         """Toggle the visibility of the control panel."""
         if self.control_panel_visible:
-            self.left_panel_container.pack_forget()  # Hide the entire left panel container
+            # Hide the left panel container
+            self.left_panel_container.pack_forget()
         else:
-            self.left_panel_container.pack(side="left", fill="y", padx=(0, 5))  # Show it again
+            # Show the left panel container again
+            self.left_panel_container.pack(side="left", fill="y", padx=(0, 5))
 
+        # Toggle the flag for control panel visibility
         self.control_panel_visible = not self.control_panel_visible
 
-        # Update toggle button text
+        # Update toggle button text based on visibility
         self.toggle_button.configure(text="≡" if self.control_panel_visible else "☰")
 
     def initialize_data(self) -> None:
@@ -106,6 +110,7 @@ class QueuingSystemGUI:
 
         btn_configs = [
             ("Upload Data", self.upload_file, "Upload service data from file"),
+            ("Probability Simulation", self.probability_simulation, "Run probability simulation for customer events"),
             ("Simulate", self.generate_customers, "Generate new customer data"),
             ("Save All", self.save_all_data, "Save current simulation data"),
             ("Clear All", self.clear_all_data, "Clear all current data")
@@ -249,12 +254,13 @@ class QueuingSystemGUI:
             messagebox.showerror("Error", str(e))
 
     def generate_customers(self) -> None:
-        """Generate random customer data."""
+        """Generate random customer data without probability columns."""
         if not self.services:
             messagebox.showerror("Error", "No services available! Please add services first.")
             return
 
         try:
+            self.show_probability_columns = False  # Ensure no probability columns for normal simulation
             num_customers = random.randint(5, 10)
             arrival_time = 0
             new_data = []
@@ -269,54 +275,153 @@ class QueuingSystemGUI:
                 departure_time = arrival_time + service_duration
 
                 # Add arrival and departure events
-                for event_type in ['Arrival', 'Departure']:
-                    event_time = arrival_time if event_type == 'Arrival' else departure_time
-                    new_data.append({
-                        'Customer ID': customer_id,
-                        'Event Type': event_type,
-                        'Clock Time': event_time,
-                        'Service Code': service_code,
-                        'Service Title': service_info['title'],
-                        'Service Duration': service_duration,
-                        'End Time': departure_time
-                    })
+                new_data.append({
+                    'Customer ID': customer_id,
+                    'Event Type': 'Arrival',
+                    'Clock Time': arrival_time,
+                    'Service Code': service_code,
+                    'Service Title': service_info['title'],
+                    'Service Duration': service_duration,
+                    'End Time': departure_time
+                })
+                new_data.append({
+                    'Customer ID': customer_id,
+                    'Event Type': 'Departure',
+                    'Clock Time': departure_time,
+                    'Service Code': service_code,
+                    'Service Title': service_info['title'],
+                    'Service Duration': service_duration,
+                    'End Time': departure_time
+                })
 
+            # Update the DataFrame and displays
             self.current_data = pd.DataFrame(new_data)
             self.update_displays()
+            messagebox.showinfo("Simulation Complete", "Regular simulation completed successfully!")
 
         except Exception as e:
             messagebox.showerror("Error", f"Failed to generate customers: {str(e)}")
 
+    def probability_simulation(self) -> None:
+        """Run a probability-based simulation for customer events and display probability columns."""
+        if not self.services:
+            messagebox.showerror("Error", "No services available! Please add services first.")
+            return
+
+        try:
+            arrival_probability = 0.6  # 60% chance of customer arrival per time unit
+            service_completion_probability = 0.8
+            max_customers = 20
+            simulated_data = []
+            arrival_time = 0
+
+            for customer_id in range(1, max_customers + 1):
+                if random.random() <= arrival_probability:
+                    arrival_time += random.randint(1, 3)
+
+                    service_code = random.choice(list(self.services.keys()))
+                    service_info = self.services[service_code]
+                    service_duration = service_info['duration']
+                    departure_time = arrival_time + service_duration
+
+                    # Probability-based columns
+                    arrival_prob = round(random.random(), 2)
+                    completion_prob = round(service_completion_probability, 2)
+
+                    simulated_data.append({
+                        'Customer ID': customer_id,
+                        'Event Type': 'Arrival',
+                        'Clock Time': arrival_time,
+                        'Service Code': service_code,
+                        'Service Title': service_info['title'],
+                        'Service Duration': service_duration,
+                        'End Time': departure_time,
+                        'Arrival Probability': arrival_prob,   # New column
+                        'Completion Probability': completion_prob  # New column
+                    })
+                    simulated_data.append({
+                        'Customer ID': customer_id,
+                        'Event Type': 'Departure',
+                        'Clock Time': departure_time,
+                        'Service Code': service_code,
+                        'Service Title': service_info['title'],
+                        'Service Duration': service_duration,
+                        'End Time': departure_time,
+                        'Arrival Probability': arrival_prob,
+                        'Completion Probability': completion_prob
+                    })
+
+            # Update the DataFrame with probability columns
+            self.current_data = pd.DataFrame(simulated_data)
+            
+            # Set flag to show probability columns
+            self.show_probability_columns = True
+            self.update_displays()
+            messagebox.showinfo("Probability Simulation Complete", "Probability-based simulation completed successfully!")
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to run probability simulation: {str(e)}")
+
+
     def update_displays(self) -> None:
-        """Update all displays with current data."""
+        """Update all displays with current data, optionally showing probability columns."""
         self.update_tree()
         self.update_chronological_table()
         self.update_graph()
 
+
     def update_tree(self) -> None:
-        """Update the main data tree view."""
-        for item in self.tree.get_children():
-            self.tree.delete(item)
+        """Update the main data tree view, optionally showing probability columns."""
+        self.tree.delete(*self.tree.get_children())  # Clear existing data
+
+        # Define base columns and add probability columns if the flag is set
+        columns = ["Customer ID", "Event Type", "Clock Time", "Service Code", 
+                "Service Title", "Service Duration", "End Time"]
+        if self.show_probability_columns:
+            columns.extend(["Arrival Probability", "Completion Probability"])
+
+        # Reconfigure columns in the tree view
+        self.tree["columns"] = columns
+        for col in columns:
+            self.tree.heading(col, text=col)
+            self.tree.column(col, width=150)
 
         if not self.current_data.empty:
-            sorted_data = self.current_data.sort_values('Clock Time')
+            sorted_data = self.current_data.sort_values("Clock Time")
             for _, row in sorted_data.iterrows():
-                self.tree.insert("", "end", values=tuple(row))
+                values = [row[col] for col in columns]  # Only display columns in the defined list
+                self.tree.insert("", "end", values=values)
+
 
     def update_chronological_table(self) -> None:
-        """Update the chronological events table."""
-        for item in self.chrono_tree.get_children():
-            self.chrono_tree.delete(item)
+        """Update the chronological events table, optionally showing probability columns."""
+        self.chrono_tree.delete(*self.chrono_tree.get_children())  # Clear existing data
+
+        # Define base columns and add probability columns if the flag is set
+        columns = ["Time", "Event Type", "Customer ID", "Service"]
+        if self.show_probability_columns:
+            columns.extend(["Arrival Probability", "Completion Probability"])
+
+        # Reconfigure columns in the chronological tree view
+        self.chrono_tree["columns"] = columns
+        for col in columns:
+            self.chrono_tree.heading(col, text=col)
+            self.chrono_tree.column(col, width=150)
 
         if not self.current_data.empty:
-            sorted_data = self.current_data.sort_values('Clock Time')
+            sorted_data = self.current_data.sort_values("Clock Time")
             for _, row in sorted_data.iterrows():
-                self.chrono_tree.insert("", "end", values=(
+                values = [
                     f"Time {row['Clock Time']}",
-                    row['Event Type'],
+                    row["Event Type"],
                     f"Customer {row['Customer ID']}",
-                    row['Service Title']
-                ))
+                    row["Service Title"]
+                ]
+                if self.show_probability_columns:
+                    values.extend([row["Arrival Probability"], row["Completion Probability"]])
+                self.chrono_tree.insert("", "end", values=values)
+
+
 
     def update_graph(self) -> None:
         """Update the system state graph."""
