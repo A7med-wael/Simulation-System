@@ -686,7 +686,7 @@ class QueuingSystemGUI:
             messagebox.showerror("Error", str(e))
 
     def generate_customers(self) -> None:
-        """Generate random customer data without probability columns."""
+        """Generate random customer data without probability columns, ensuring no service overlap."""
         if not self.services:
             messagebox.showerror("Error", "No services available! Please add services first.")
             return
@@ -696,15 +696,27 @@ class QueuingSystemGUI:
             num_customers = random.randint(5, 10)
             arrival_time = 0
             new_data = []
+            service_end_times = {}  # Track when each service becomes available
 
             for customer_id in range(1, num_customers + 1):
                 interval = random.randint(1, 3)
-                arrival_time += interval
-
+                initial_arrival_time = arrival_time + interval
+                
                 service_code = random.choice(list(self.services.keys()))
                 service_info = self.services[service_code]
                 service_duration = service_info['duration']
+
+                # Check if the service is currently in use
+                if service_code in service_end_times:
+                    # If service is busy, adjust arrival time to when service becomes available
+                    arrival_time = max(initial_arrival_time, service_end_times[service_code])
+                else:
+                    arrival_time = initial_arrival_time
+
                 departure_time = arrival_time + service_duration
+                
+                # Update the service end time
+                service_end_times[service_code] = departure_time
 
                 # Add arrival and departure events
                 new_data.append({
@@ -726,6 +738,9 @@ class QueuingSystemGUI:
                     'End Time': departure_time
                 })
 
+            # Sort the data by clock time to ensure proper chronological order
+            new_data.sort(key=lambda x: x['Clock Time'])
+            
             # Update the DataFrame
             self.current_data = pd.DataFrame(new_data)
             
@@ -1343,7 +1358,6 @@ class QueuingSystemGUI:
             print(f"Error updating multi-server graph: {str(e)}")
             messagebox.showerror("Error", f"Failed to update simulation graph: {str(e)}")
 
-
     def _add_graph_annotations(self, sorted_data: pd.DataFrame) -> None:
         """Add annotations to the graph."""
         try:
@@ -1359,7 +1373,6 @@ class QueuingSystemGUI:
                 
         except Exception as e:
             print(f"Error adding annotations: {str(e)}")
-
 
     def _configure_graph(self) -> None:
         """Configure graph settings."""
@@ -1382,7 +1395,6 @@ class QueuingSystemGUI:
             
         except Exception as e:
             print(f"Error configuring graph: {str(e)}")
-
 
     def _show_empty_graph(self) -> None:
         """Show empty graph placeholder."""
