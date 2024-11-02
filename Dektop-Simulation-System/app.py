@@ -10,6 +10,7 @@ from ThemeManager import ThemeManager
 import ttkbootstrap as ttkboot
 from ttkbootstrap.constants import *
 from PIL import Image, ImageTk 
+from datetime import timedelta
 
 class QueuingSystemGUI:
     def __init__(self, root: tk.Tk) -> None:
@@ -18,6 +19,8 @@ class QueuingSystemGUI:
         self.root.title("Simulation System")
         self.root.geometry("1200x800")
         
+        self.simulation_type = "single" 
+
         # Initialize theme state
         self.is_dark_mode = False
         self.colors = {
@@ -28,6 +31,8 @@ class QueuingSystemGUI:
             "accent": "#007ACC"  
         }
         
+        self.arrival_data = []
+        self.server_data = {1: [], 2: []}
         # Create theme switch before other components
         self.create_theme_switch()
         
@@ -239,16 +244,19 @@ class QueuingSystemGUI:
         self.control_tab = ttk.Frame(self.sidebar, style="TFrame")
         self.service_tab = ttk.Frame(self.sidebar, style="TFrame")
         self.toggle_tab = ttk.Frame(self.sidebar, style="TFrame")  # New toggle tab frame
+        self.Parallel_server_tab = ttk.Frame(self.sidebar, style="TFrame")
 
         # Add frames to notebook with icons (or text)
         self.sidebar.add(self.toggle_tab, text="≡")  # Toggle tab
         self.sidebar.add(self.control_tab, text="⚙️")  # Control icon
         self.sidebar.add(self.service_tab, text="🔧")  # Service icon
-
+        self.sidebar.add(self.Parallel_server_tab, text="📊")  
+        
         # Set up tooltip texts for the tabs
         self.create_tooltip(self.control_tab, "Controls")
         self.create_tooltip(self.service_tab, "Services")
         self.create_tooltip(self.toggle_tab, "Toggle Control Panel")  # Tooltip for toggle tab
+        self.create_tooltip(self.Parallel_server_tab, "Parallel Server Data")
 
         # Bind the toggle tab to the toggle function
         self.sidebar.bind("<<NotebookTabChanged>>", self.on_tab_change)
@@ -256,6 +264,7 @@ class QueuingSystemGUI:
         # Create the control and service frames in their respective tabs
         self.create_control_frame(self.control_tab)
         self.create_service_form(self.service_tab)
+        self.create_Parallel_simulation_form(self.Parallel_server_tab)
 
         # Right side content
         self.content_frame = ttk.Frame(self.main_container, style="TFrame")
@@ -314,8 +323,7 @@ class QueuingSystemGUI:
 
         # Update toggle button text based on visibility
         self.sidebar.tab(0, text="≡" if self.control_panel_visible else "☰")
-
-            
+ 
     def apply_theme(self) -> None:
         """Apply the current theme to all components."""
         theme = ThemeManager.get_theme(self.is_dark_mode)
@@ -372,11 +380,6 @@ class QueuingSystemGUI:
 
     def show_data_frames(self) -> None:
         """Show all data frames and hide logo, ensuring no duplicates."""
-        
-        # Hide logo frame if it exists and is visible
-        if hasattr(self, 'logo_frame') and self.logo_frame.winfo_ismapped():
-            self.logo_frame.pack_forget()
-        
         # Hide empty state if it exists and is visible
         if hasattr(self, 'empty_state_frame') and self.empty_state_frame.winfo_ismapped():
             self.empty_state_frame.pack_forget()
@@ -385,6 +388,9 @@ class QueuingSystemGUI:
         if not self.tables_container.winfo_ismapped():
             self.tables_container.pack(fill="both", expand=True, pady=(0, 5))
         
+        if hasattr(self, 'tables_container'):
+            self.tables_container.pack(fill="both", expand=True, pady=5)
+
         # Ensure graph frame is packed if not already packed
         if hasattr(self, 'graph_frame') and not self.graph_frame.winfo_ismapped():
             self.graph_frame.pack(fill="both", expand=True)
@@ -392,28 +398,69 @@ class QueuingSystemGUI:
         self.data_visible = True
 
     def create_data_frames(self) -> None:
-        """Create all data frames only once but don't display them initially."""
+        """Create all data frames for both single and parallel server simulations."""
         
-        # Check if tables_container has been created to avoid duplication
+        # Create containers only if they don't exist
         if not hasattr(self, 'tables_container'):
-            # Create a container frame for data and chrono tables
+            # Main container for all tables
             self.tables_container = ttk.Frame(self.right_panel)
             
-            # Create Customer Data frame and add Treeview directly
-            self.data_frame = ttk.LabelFrame(self.tables_container, text="Customer Data", padding="10")
+            # Create notebook for managing different views
+            self.table_notebook = ttk.Notebook(self.tables_container)
+            
+            # Single Server View
+            self.single_server_frame = ttk.Frame(self.table_notebook)
+            
+            # Create Customer Data frame for single server
+            self.data_frame = ttk.LabelFrame(self.single_server_frame, text="Customer Data", padding="10")
             self.create_data_frame(self.data_frame)
             self.data_frame.pack(fill="both", expand=True, side="top", pady=(0, 5))
             
-            # Create Chronological Order frame and add Treeview directly
-            self.chrono_frame = ttk.LabelFrame(self.tables_container, text="Chronological Order of Events", padding="10")
+            # Create Chronological Order frame for single server
+            self.chrono_frame = ttk.LabelFrame(self.single_server_frame, text="Chronological Order of Events", padding="10")
             self.create_chronological_table(self.chrono_frame)
             self.chrono_frame.pack(fill="both", expand=True, side="bottom", pady=5)
-        
-        # Check if graph_frame has been created to avoid duplication
+            
+            # Parallel Servers View
+            self.parallel_server_frame = ttk.Frame(self.table_notebook)
+            
+            # Create Parallel Servers Data frame
+            self.parallel_data_frame = ttk.LabelFrame(self.parallel_server_frame, text="Parallel Servers Simulation Data", padding="10")
+            self.create_parallel_data_frame(self.parallel_data_frame)
+            self.parallel_data_frame.pack(fill="both", expand=True, pady=5)
+            
+            # Add frames to notebook
+            self.table_notebook.add(self.single_server_frame, text="Single Server View")
+            self.table_notebook.add(self.parallel_server_frame, text="Parallel Servers View")
+            
+            # Pack the notebook
+            self.table_notebook.pack(fill="both", expand=True)
+            
+        # Create graph frame if it doesn't exist
         if not hasattr(self, 'graph_frame'):
-            # Create graph frame separately
             self.graph_frame = ttk.LabelFrame(self.right_panel, text="System State Graph", padding="10")
             self.create_graph_frame(self.graph_frame)
+        
+        # Create function to switch views based on simulation type
+        def switch_view(simulation_type: str) -> None:
+            """Switch between single and parallel server views."""
+            if simulation_type == "parallel":
+                self.table_notebook.select(1)  # Select parallel servers tab
+                if hasattr(self, 'current_data') and not self.current_data.empty:
+                    self.update_tree()
+                    self.update_graph_multi_servers()
+            else:
+                self.table_notebook.select(0)  # Select single server tab
+                if hasattr(self, 'current_data') and not self.current_data.empty:
+                    self.update_parallel_tree()
+                    self.update_graph_multi_servers()
+                else:
+                    self.update_tree()
+                    self.update_chronological_table()
+                    self.update_graph_single_server()
+        
+        # Store the switch_view function as an instance method
+        self.switch_simulation_view = switch_view
 
     def toggle_theme(self) -> None:
         """Toggle between light and dark themes."""
@@ -476,40 +523,48 @@ class QueuingSystemGUI:
     
     def create_service_form(self, parent: ttk.Frame) -> None:
         """Create the service input form with VSCode-like styling."""
+        
+        # Main frame for form with padding and style
         form_frame = ttk.Frame(parent, padding="10", style="Custom.TFrame")
         form_frame.pack(fill="both", expand=True)
+        
+        # Label frame to contain the form fields
+        form_label = ttk.LabelFrame(form_frame, text="Service Form", padding="10", style="Custom.TLabelframe")
+        form_label.pack(fill="x", pady=(0, 10))
 
+        # Field configurations
         fields = [
             ("Service Code:", "service_code_entry"),
             ("Service Title:", "service_title_entry"),
             ("Duration (min):", "service_duration_entry")
         ]
 
+        # Loop to create each field with label and entry
         for label_text, entry_name in fields:
-            container = ttk.Frame(form_frame, style="Custom.TFrame")
-            container.pack(fill="x", pady=2)
+            container = ttk.Frame(form_label, style="Custom.TFrame")  # Use form_label as parent
+            container.pack(fill="x", pady=5)
             
-            ttk.Label(
-                container,
-                text=label_text,
-                style="Custom.TLabel"
-            ).pack(side="left")
+            # Label for field
+            label = ttk.Label(container, text=label_text, style="Custom.TLabel")
+            label.pack(side="left", padx=(0, 5))
             
-            entry = ttk.Entry(
-                container,
-                style="Custom.TEntry"
-            )
+            # Entry for field
+            entry = ttk.Entry(container, style="Custom.TEntry", width=30)
             entry.pack(side="right", fill="x", expand=True, padx=(5, 0))
+            
+            # Bind the entry to the self object
             setattr(self, entry_name, entry)
 
+        # Add Service Button
         add_btn = ttk.Button(
             form_frame,
             text="Add Service",
             command=self.add_service,
-            width=20,
+            width=15,
             style="ControlFrame.TButton"
         )
-        add_btn.pack(pady=5)
+        add_btn.pack(pady=10)  # Adjusted padding for button
+
     def create_data_frame(self, parent: ttk.Frame) -> None:
         """Create the main data display treeview directly in the parent frame."""
         columns = ("Customer ID", "Event Type", "Clock Time", "Service Code", 
@@ -528,6 +583,23 @@ class QueuingSystemGUI:
         
         # Pack the Treeview
         self.tree.pack(fill="both", expand=True)
+
+    def create_parallel_data_frame(self, parent: ttk.Frame) -> None:
+        """Create the parallel servers data display treeview."""
+        columns = (
+            "Customer ID", "Server", "Arrival Time", "Wait Time",
+            "Service Start", "Service Duration", "Service End",
+            "System Time"
+        )
+        self.parallel_tree = ttk.Treeview(parent, columns=columns, show="headings")
+
+        for col in columns:
+            self.parallel_tree.heading(col, text=col)
+            self.parallel_tree.column(col, width=150)
+
+        
+        self.add_scrollbars(parent, self.parallel_tree)        
+        self.parallel_tree.pack(fill="both", expand=True)
 
     def create_chronological_table(self, parent: ttk.Frame) -> None:
         """Create the chronological events table directly in the parent frame."""
@@ -570,7 +642,7 @@ class QueuingSystemGUI:
             if not hasattr(self, 'current_data') or self.current_data.empty:
                 self._show_empty_graph()
             else:
-                self.update_graph()
+                self.update_graph_single_server()
 
         except Exception as e:
             print(f"Error creating graph frame: {str(e)}")
@@ -736,12 +808,328 @@ class QueuingSystemGUI:
         except Exception as e:
             messagebox.showerror("Error", f"Failed to run probability simulation: {str(e)}")
 
+    def create_Parallel_simulation_form(self, parent: ttk.Frame) -> None:
+        """Create the simulation setup form in the existing tab."""
+        # Main container
+        form_frame = ttk.Frame(parent, padding="10")
+        form_frame.pack(fill="both", expand=True)
+        
+        # Data Import/Export Section
+        upload_frame = ttk.LabelFrame(form_frame, text="Data Import/Export", padding=10)
+        upload_frame.pack(fill="x", pady=(0, 10))
+
+        ttk.Button(upload_frame, text="Upload", command=self.upload_Parallel_Server_file).pack(side="left", padx=5)
+        ttk.Button(upload_frame, text="Save", command=self.save_Parellel_server_data).pack(side="left", padx=5)
+        ttk.Button(upload_frame, text="Simulate", command=self.run_parallel_simulation).pack(side="left", padx=5)
+
+        # Arrival Probability Input Section
+        arrival_frame = ttk.LabelFrame(form_frame, text="Arrival Probability", padding=10)
+        arrival_frame.pack(fill="x", pady=(10, 10))
+
+        arrival_fields = [
+            ("Time Between Arrivals:", "time_between_arrivals_entry"),
+            ("Probability:", "probability_entry"),
+            ("Accumulative Probability:", "accum_probability_entry"),
+            ("Digit Assignment From:", "digit_assignment_from_entry"),
+            ("Digit Assignment To:", "digit_assignment_to_entry"),
+        ]
+        
+        self.arrival_entries = {}
+        for label_text, entry_name in arrival_fields:
+            row_frame = ttk.Frame(arrival_frame)
+            row_frame.pack(fill="x", pady=2)
+            
+            ttk.Label(row_frame, text=label_text).pack(side="left")
+            
+            entry = ttk.Entry(row_frame, width=15)
+            entry.pack(side="right", padx=(5, 0), fill="x", expand=True)
+            self.arrival_entries[entry_name] = entry
+
+        # Add button to add arrival data
+        ttk.Button(arrival_frame, text="Add Arrival Data", command=self.add_arrival_data).pack(pady=10)
+
+        # Arrival TreeView for displaying added arrival data
+        self.arrival_tree = ttk.Treeview(arrival_frame, columns=[
+            "Time Between Arrivals", "Probability", "Accumulative Probability", 
+            "Digit Assignment From", "Digit Assignment To"
+        ], show="headings", height=5)
+        for col in self.arrival_tree["columns"]:
+            self.arrival_tree.heading(col, text=col)
+            self.arrival_tree.column(col, width=120)
+
+        self.arrival_tree.pack(fill="x", pady=(10, 10))
+
+        # Server Data Section
+        server_frame = ttk.LabelFrame(form_frame, text="Server Data", padding=10)
+        server_frame.pack(fill="x", pady=(10, 10))
+
+        ttk.Label(server_frame, text="Server No:").pack(anchor="w", pady=(0, 5))
+        self.server_var = tk.StringVar(value="1")
+        self.server_combo = ttk.Combobox(
+            server_frame, textvariable=self.server_var, values=["1", "2"], state="readonly", width=5
+        )
+        self.server_combo.pack(anchor="w", pady=(0, 10))
+
+        # Server data input fields
+        server_fields = [
+            ("Service Time:", "service_time_entry"),
+            ("Probability:", "service_probability_entry"),
+            ("Accumulative Probability:", "service_accum_probability_entry"),
+            ("Digit Assignment From:", "service_digit_assignment_from_entry"),
+            ("Digit Assignment To:", "service_digit_assignment_to_entry"),
+        ]
+        
+        self.server_entries = {}
+        for label_text, entry_name in server_fields:
+            row_frame = ttk.Frame(server_frame)
+            row_frame.pack(fill="x", pady=2)
+            
+            ttk.Label(row_frame, text=label_text).pack(side="left")
+            
+            entry = ttk.Entry(row_frame, width=15)
+            entry.pack(side="right", padx=(5, 0), fill="x", expand=True)
+            self.server_entries[entry_name] = entry
+
+        # Add button to add server data
+        ttk.Button(server_frame, text="Add Server Data", command=self.add_server_data).pack(pady=10)
+
+        # Server TreeView for displaying added server data
+        self.server_tree = ttk.Treeview(server_frame, columns=[
+            "Service Time", "Probability", "Accumulative Probability", 
+            "Digit Assignment From", "Digit Assignment To"
+        ], show="headings", height=5)
+        for col in self.server_tree["columns"]:
+            self.server_tree.heading(col, text=col)
+            self.server_tree.column(col, width=120)
+
+        self.server_tree.pack(fill="x", pady=(10, 10))
+
+    def add_arrival_data(self) -> None:
+        """Add arrival probability data to the arrival tree."""
+        try:
+            data = [self.arrival_entries[field].get() for field in self.arrival_entries]
+            if not all(data):
+                raise ValueError("All fields must be filled")
+
+            # Validate numeric values
+            for i, value in enumerate(data[1:]):  # Skip the first field if it's text
+                try:
+                    float(value)
+                except ValueError:
+                    raise ValueError(f"Invalid numeric value in {self.arrival_tree['columns'][i+1]}")
+
+            self.arrival_tree.insert("", "end", values=data)
+
+            # Clear entry fields
+            for entry in self.arrival_entries.values():
+                entry.delete(0, tk.END)
+
+        except Exception as e:
+            messagebox.showerror("Error", str(e))
+
+    def add_server_data(self) -> None:
+        """Add server probability data to the server tree."""
+        try:
+            data = [self.server_entries[field].get() for field in self.server_entries]
+            if not all(data):
+                raise ValueError("All fields must be filled")
+
+            # Validate numeric values
+            for i, value in enumerate(data[1:]):  # Skip the first field if it's text
+                try:
+                    float(value)
+                except ValueError:
+                    raise ValueError(f"Invalid numeric value in {self.server_tree['columns'][i+1]}")
+
+            self.server_tree.insert("", "end", values=data)
+
+            # Clear entry fields
+            for entry in self.server_entries.values():
+                entry.delete(0, tk.END)
+
+        except Exception as e:
+            messagebox.showerror("Error", str(e))
+
+    def upload_Parallel_Server_file(self) -> None:
+        """Upload probability data from Excel file."""
+        try:
+            file_path = filedialog.askopenfilename(
+                filetypes=[("Excel files", "*.xlsx"), ("CSV files", "*.csv")])
+            
+            if not file_path:
+                return
+
+            df = pd.read_excel(file_path) if file_path.endswith('.xlsx') else pd.read_csv(file_path)
+            
+            # Clear existing data
+            for item in self.arrival_tree.get_children():
+                self.arrival_tree.delete(item)
+            for item in self.server_tree.get_children():
+                self.server_tree.delete(item)
+
+            # Process arrival probability data
+            arrival_cols = list(self.arrival_entries.keys())
+            if all(col in df.columns for col in arrival_cols):
+                arrival_data = df[arrival_cols].values.tolist()
+                for row in arrival_data:
+                    if not pd.isna(row).any():  # Skip rows with missing values
+                        self.arrival_tree.insert("", "end", values=row)
+                self.arrival_data = arrival_data
+
+            # Process server data
+            server_cols = list(self.server_entries.keys())
+            if all(col in df.columns for col in server_cols):
+                server_data = df[server_cols].values.tolist()
+                for row in server_data:
+                    if not pd.isna(row).any():  # Skip rows with missing values
+                        self.server_tree.insert("", "end", values=row)
+                    self.server_data[int(self.server_var.get())] = server_data
+
+            messagebox.showinfo("Success", "Data uploaded successfully!")
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to upload data: {str(e)}")
+
+    def save_Parellel_server_data(self) -> None:
+        """Save probability data to Excel file."""
+        try:
+            file_path = filedialog.asksaveasfilename(
+                defaultextension=".xlsx",
+                filetypes=[("Excel files", "*.xlsx"), ("CSV files", "*.csv")])
+            
+            if not file_path:
+                return
+
+            # Create DataFrames for arrival and server data
+            arrival_df = pd.DataFrame(self.arrival_data, columns=list(self.arrival_entries.keys()))
+            server_df = pd.DataFrame(self.server_data[int(self.server_var.get())], 
+                                columns=list(self.server_entries.keys()))
+
+            # Save to Excel with multiple sheets
+            with pd.ExcelWriter(file_path) as writer:
+                arrival_df.to_excel(writer, sheet_name='Arrival Probability', index=False)
+                server_df.to_excel(writer, sheet_name=f'Server-{self.server_var.get()}', index=False)
+
+            messagebox.showinfo("Success", "Data saved successfully!")
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to save data: {str(e)}")
+
+    def run_parallel_simulation(self) -> None:
+        """Run the parallel server simulation."""
+        try:
+            self.simulation_type = "parallel" 
+            self.update_displays()
+            # Collect and convert data from trees
+            arrival_data = [
+                {
+                    'Time Between Arrivals': int(item[0]),
+                    'Probability': float(item[1]),
+                    'Cumulative Probability': float(item[2]),
+                    'Digit Assignment From': int(item[3]),
+                    'Digit Assignment To': int(item[4])
+                }
+                for item in (self.arrival_tree.item(child)["values"] for child in self.arrival_tree.get_children())
+            ]
+
+            server_data = [
+                {
+                    'Service Time': int(item[0]),
+                    'Probability': float(item[1]),
+                    'Cumulative Probability': float(item[2]),
+                    'Digit Assignment From': int(item[3]),
+                    'Digit Assignment To': int(item[4])
+                }
+                for item in (self.server_tree.item(child)["values"] for child in self.server_tree.get_children())
+            ]
+
+            if not all([arrival_data, server_data]):
+                raise ValueError("Please ensure all probability tables have data")
+
+            # Simulation parameters
+            simulation_period = timedelta(hours=1)
+            servers = {'Able': {'available_from': timedelta(0), 'service_times': []},
+                    'Baker': {'available_from': timedelta(0), 'service_times': []}}
+
+            customers = []
+            arrival_time = timedelta(0)
+
+            def get_time_from_probability_table(random_value, probability_table, key_name):
+                for row in probability_table:
+                    if random_value <= row['Cumulative Probability']:
+                        return row[key_name]
+                raise ValueError(f"No matching entry found in the probability table for random value: {random_value}")
+
+            # Run simulation for each customer
+            while arrival_time < simulation_period:
+                random_value = random.random()
+                time_between_arrivals = get_time_from_probability_table(random_value, arrival_data, 'Time Between Arrivals')
+                arrival_time += timedelta(minutes=time_between_arrivals)
+
+                if servers['Able']['available_from'] <= arrival_time:
+                    assigned_server = 'Able'
+                elif servers['Baker']['available_from'] <= arrival_time:
+                    assigned_server = 'Baker'
+                else:
+                    assigned_server = 'Able' if servers['Able']['available_from'] < servers['Baker']['available_from'] else 'Baker'
+
+                random_value = random.random()
+                service_time = get_time_from_probability_table(random_value, server_data, 'Service Time')
+
+                start_time = max(arrival_time, servers[assigned_server]['available_from'])
+                end_time = start_time + timedelta(minutes=service_time)
+
+                # Modified customer info to match the graph function's expected format
+                customer_info = {
+                    'Customer ID': len(customers) + 1,
+                    'Clock Time': arrival_time.total_seconds() / 60,  # Convert to minutes
+                    'Event Type': 'Arrival',
+                    'Service Duration': service_time,
+                    'End Time': end_time.total_seconds() / 60,  # Convert to minutes
+                    'Server': assigned_server,
+                    'Wait Time': (start_time - arrival_time).total_seconds() / 60,
+                    'Service Time': service_time
+                }
+                customers.append(customer_info)
+
+                servers[assigned_server]['available_from'] = end_time
+                servers[assigned_server]['service_times'].append(service_time)
+
+            # Create DataFrame with the modified structure
+            df_customers = pd.DataFrame(customers)
+            self.current_data = df_customers
+
+            # Calculate metrics
+            total_simulation_time = simulation_period.total_seconds() / 60
+            able_busy_time = min(sum(servers['Able']['service_times']), total_simulation_time)
+            baker_busy_time = min(sum(servers['Baker']['service_times']), total_simulation_time)
+
+            metrics = {
+                'Able Utilization Rate': f"{min(able_busy_time / total_simulation_time, 1.0):.2%}",
+                'Baker Utilization Rate': f"{min(baker_busy_time / total_simulation_time, 1.0):.2%}",
+                'Average Waiting Time': f"{df_customers['Wait Time'].mean():.2f} minutes",
+                'Total Customers': len(customers)
+            }
+
+
+            self.show_data_frames()
+            self.update_displays()
+            metrics_text = "\n".join(f"{k}: {v}" for k, v in metrics.items())
+            messagebox.showinfo("Simulation Complete", f"Simulation Results:\n\n{metrics_text}")
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Simulation failed: {str(e)}")
+
     def update_displays(self) -> None:
         """Update all displays with current data, optionally showing probability columns."""
-        self.update_tree()
-        self.update_chronological_table()
-        self.update_graph()
-
+        if hasattr(self, 'simulation_type') and self.simulation_type == "parallel":
+            self.update_parallel_tree()
+            self.update_graph_multi_servers()
+        else:    
+            self.update_tree()
+            self.update_chronological_table()
+            self.update_graph_single_server()
+            
     def update_tree(self) -> None:
         """Update the main data tree view, optionally showing probability columns."""
         self.tree.delete(*self.tree.get_children())  # Clear existing data
@@ -763,6 +1151,37 @@ class QueuingSystemGUI:
             for _, row in sorted_data.iterrows():
                 values = [row[col] for col in columns]  # Only display columns in the defined list
                 self.tree.insert("", "end", values=values)
+
+    def update_parallel_tree(self) -> None:
+        """Update the parallel servers treeview with current simulation data."""
+        try:
+            # Clear existing items
+            for item in self.parallel_tree.get_children():
+                self.parallel_tree.delete(item)
+                
+            if hasattr(self, 'current_data') and not self.current_data.empty:
+                for _, row in self.current_data.iterrows():
+                    # Convert times to formatted strings
+                    arrival_time = f"{row['Clock Time']:.2f}"
+                    wait_time = f"{row['Wait Time']:.2f}"
+                    service_start = f"{(row['Clock Time'] + row['Wait Time']):.2f}"
+                    service_end = f"{row['End Time']:.2f}"
+                    system_time = f"{(row['End Time'] - row['Clock Time']):.2f}"
+                    
+                    # Insert data into treeview
+                    self.parallel_tree.insert('', 'end', values=(
+                        f"Customer {row['Customer ID']}",
+                        row['Server'],
+                        f"{arrival_time} min",
+                        f"{wait_time} min",
+                        f"{service_start} min",
+                        f"{row['Service Duration']} min",
+                        f"{service_end} min",
+                        f"{system_time} min"
+                    ))
+        except Exception as e:
+            print(f"Error updating parallel tree: {str(e)}")
+            messagebox.showerror("Error", f"Failed to update parallel servers table: {str(e)}")
 
     def update_chronological_table(self) -> None:
         """Update the chronological events table, optionally showing probability columns."""
@@ -792,7 +1211,7 @@ class QueuingSystemGUI:
                     values.extend([row["Arrival Probability"], row["Completion Probability"]])
                 self.chrono_tree.insert("", "end", values=values)
 
-    def update_graph(self) -> None:
+    def update_graph_single_server(self) -> None:
         """Update the system state graph with theme support."""
         try:
             # Clear the current plot
@@ -844,6 +1263,85 @@ class QueuingSystemGUI:
         except Exception as e:
             print(f"Error updating graph: {str(e)}")
             messagebox.showerror("Error", f"Failed to update graph: {str(e)}")
+
+    def update_graph_multi_servers(self) -> None:
+        """Update the system state graph with a unified view of servers and customers."""
+        try:
+            if not hasattr(self, 'ax') or not hasattr(self, 'figure'):
+                return
+                
+            self.ax.clear()
+            theme = ThemeManager.get_theme(self.is_dark_mode)
+            self.figure.set_facecolor(theme['graph_bg'])
+            self.ax.set_facecolor(theme['graph_bg'])
+            
+            if hasattr(self, 'current_data') and not self.current_data.empty:
+                # Create a unified timeline view
+                server_positions = {'Able': 1, 'Baker': 2}
+                
+                # Plot server timelines
+                for server, position in server_positions.items():
+                    self.ax.hlines(
+                        position, 0, self.current_data['End Time'].max(),
+                        colors='gray', linestyles='--', alpha=0.3,
+                        label=f'{server} Timeline'
+                    )
+                
+                # Plot each customer's service period
+                colors = {'Able': '#2ecc71', 'Baker': '#3498db'}
+                
+                for _, row in self.current_data.iterrows():
+                    server_pos = server_positions[row['Server']]
+                    service_start = row['Clock Time'] + row['Wait Time']
+                    
+                    # Arrival point
+                    self.ax.scatter(row['Clock Time'], 0, color='#e74c3c', marker='o',
+                                label='Arrival' if _ == 0 else "")
+                    
+                    # Wait time (if any)
+                    if row['Wait Time'] > 0:
+                        self.ax.vlines(row['Clock Time'], 0, server_pos,
+                                    colors='#f1c40f', linestyles=':',
+                                    label='Wait Time' if _ == 0 else "")
+                    
+                    # Service period
+                    self.ax.hlines(server_pos, service_start, row['End Time'],
+                                colors=colors[row['Server']], linewidth=6, alpha=0.7,
+                                label=f'{row["Server"]} Service' if _ == 0 else "")
+                    
+                    # Customer labels
+                    self.ax.text(row['Clock Time'], -0.2, f'C{row["Customer ID"]}',
+                            fontsize=8, rotation=45, ha='right', va='top')
+                
+                # Customize the graph
+                self.ax.set_ylim(-0.5, 2.5)
+                self.ax.set_xlim(-2, self.current_data['End Time'].max() + 2)
+                self.ax.set_yticks([0, 1, 2])
+                self.ax.set_yticklabels(['Arrivals', 'Server Able', 'Server Baker'])
+                
+                self.ax.set_xlabel('Time (minutes)')
+                self.ax.set_title('Parallel Servers Simulation Timeline')
+                self.ax.grid(True, alpha=0.2)
+                
+                # Add legend with unique entries
+                handles, labels = self.ax.get_legend_handles_labels()
+                by_label = dict(zip(labels, handles))
+                self.ax.legend(
+                    by_label.values(), by_label.keys(),
+                    loc='upper right', bbox_to_anchor=(1, 1)
+                )
+                
+            else:
+                self.ax.text(0.5, 0.5, 'No simulation data available',
+                            ha='center', va='center',
+                            color=theme.get('text_color', 'black'))
+            
+            self.figure.tight_layout()
+            self.canvas.draw_idle()
+            
+        except Exception as e:
+            print(f"Error updating multi-server graph: {str(e)}")
+            messagebox.showerror("Error", f"Failed to update simulation graph: {str(e)}")
 
 
     def _add_graph_annotations(self, sorted_data: pd.DataFrame) -> None:
