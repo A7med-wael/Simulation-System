@@ -11,9 +11,17 @@ This is a **Queuing System Simulation** tool built using **Python** and **Flask*
 - **Clear Data**: Clear all customer data and reset the table and graph.
 
 ## Demo
-### Web-App
+### Web-App (Version 1)
+![App Screenshot Placeholder](simulation-app-web-old.png)
+
+### Web-App (Version 1.2)
 ![App Screenshot Placeholder](simulation-app-web-1.png)
 ![App Screenshot Placeholder](simulation-app-web-2.png)
+
+### Web-App (Version 1.3)
+![App Screenshot Placeholder](simulation-app-web-4.png)
+![App Screenshot Placeholder](simulation-app-web-3.png)
+
 
 ### Desktop-App
 ![App Screenshot Placeholder](simulation-app-desk.png)

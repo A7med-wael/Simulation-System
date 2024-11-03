@@ -167,8 +167,8 @@ $(document).ready(function () {
                 customerRow.find('td').eq(4).text(data['Service Title']);
                 customerRow.find('td').eq(5).text(data['Service Duration']);
                 customerRow.find('td').eq(6).text(data['End Time']);
-                if (hasArrivalProb && data['Arrival Probability'] !== undefined) {customerRow.find('td').eq(7).text(data['Arrival Probability']); console.log(data['Arrival Probability'])}
-                else {customerRow.find('td').eq(7).remove(); console.log("WOW")}
+                if (hasArrivalProb && data['Arrival Probability'] !== undefined) customerRow.find('td').eq(7).text(data['Arrival Probability']);
+                else customerRow.find('td').eq(7).remove();
                 if (hasCompletionProb && data['Completion Probability'] !== undefined) customerRow.find('td').eq(8).text(data['Completion Probability']);
                 else customerRow.find('td').eq(7).remove();
                 $customerTbody.append(customerRow);

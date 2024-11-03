@@ -14,14 +14,23 @@ class SimulationService(ISimulationService):
         arrival_time = 0
         new_data = []
         service_end_times = {}
+        assigned_customer_ids = []  # List to track assigned customer IDs
 
-        for customer_id in range(1, num_customers + 1):
+        for _ in range(num_customers):
             if random.random() <= arrival_probability:
+                customer_id = len(assigned_customer_ids) + 1  # Unique ID based on the count of assigned IDs
+                assigned_customer_ids.append(customer_id)  # Add to the list of assigned IDs
+
                 if random.choice([True, False]) or customer_id == 1:
                     interval = random.randint(1, 3)
                     arrival_time += interval
                 else:
-                    arrival_time = new_data[-1]['Clock Time']
+                    # Ensure new_data is not empty before accessing
+                    if new_data:
+                        arrival_time = new_data[-1]['Clock Time']
+                    else:
+                        # If new_data is empty, reset arrival_time to 0 or some default
+                        arrival_time = 0
 
                 service_code = random.choice(list(services.keys()))
                 service_info = services[service_code]
