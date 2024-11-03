@@ -24,6 +24,10 @@
                         <button type="button" id="uploadFileButton" class="btn btn-primary w-100 mb-2"><i class="fas fa-upload"></i> Upload Data</button>
                     </form>
                     <form id="simulateForm">
+                        <div class="form-check mb-2">
+                            <input type="checkbox" class="form-check-input" id="probabilityCheckbox" name="probability_simulation">
+                            <label class="form-check-label" for="probabilityCheckbox">Enable Probability Simulation</label>
+                        </div>
                         <button type="button" id="simulateButton" class="btn btn-success w-100 mb-2"><i class="fas fa-play"></i> Simulate</button>
                     </form>
                     <button id="downloadDataButton" class="btn btn-info w-100 mb-2"><i class="fas fa-save"></i> Save All</button>
@@ -80,6 +84,8 @@
                                 <th>Service Title</th>
                                 <th>Service Duration</th>
                                 <th>End Time</th>
+                                <th class="arrival-prob d-none">Arrival Probability</th>
+                                <th class="completion-prob d-none">Completion Probability</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -100,6 +106,8 @@
                                 <th>Event Type</th>
                                 <th>Customer ID</th>
                                 <th>Service</th>
+                                <th class="arrival-prob d-none">Arrival Probability</th>
+                                <th class="completion-prob d-none">Completion Probability</th>
                             </tr>
                         </thead>
                         <tbody>

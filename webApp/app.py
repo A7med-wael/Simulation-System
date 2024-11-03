@@ -18,7 +18,8 @@ def add_service():
 
 @app.route('/simulate', methods=['POST'])
 def simulate_customers():
-    data_service.current_data = simulation_service.simulate_customers(data_service.services)
+    probability_simulation = request.json.get('probability_simulation', False)
+    data_service.current_data = simulation_service.simulate_customers(data_service.services, probability_simulation)
     return jsonify({'success': True, 'events': data_service.current_data.to_dict('records')})
 
 @app.route('/arrival_plot.png')

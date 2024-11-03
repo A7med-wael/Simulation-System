@@ -127,9 +127,13 @@ $(document).ready(function () {
     }
 
     function simulateCustomers() {
+        const probabilitySimulation = $('#probabilityCheckbox').is(':checked');
+
         $.ajax({
             url: '/simulate',
             type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({ probability_simulation: probabilitySimulation }),
             success: handleSimulationSuccess,
             error: handleAjaxError('simulating customers')
         });
@@ -143,23 +147,43 @@ $(document).ready(function () {
         $eventTbody.empty();
 
         if (response.success) {
-            response.events.forEach(data => {
-                let row = customerRowTemplate
-                    .replace('{{Customer ID}}', data['Customer ID'])
-                    .replace('{{Event Type}}', data['Event Type'])
-                    .replace('{{Clock Time}}', data['Clock Time'])
-                    .replace('{{Service Code}}', data['Service Code'])
-                    .replace('{{Service Title}}', data['Service Title'])
-                    .replace('{{Service Duration}}', data['Service Duration'])
-                    .replace('{{End Time}}', data['End Time']);
-                $customerTbody.append(row);
+            // Check if any event has non-null probabilities
+            const hasArrivalProb = response.events.some(data => data['Arrival Probability'] !== undefined);
+            const hasCompletionProb = response.events.some(data => data['Completion Probability'] !== undefined);
 
-                let item = eventRowTemplate
-                    .replace('{{Clock Time}}', data['Clock Time'])
-                    .replace('{{Event Type}}', data['Event Type'])
-                    .replace('{{Customer ID}}', data['Customer ID'])
-                    .replace('{{Service Title}}', data['Service Title']);
-                $eventTbody.append(item);
+            // Show or hide headers based on the presence of probability data
+            $('.customer-data-table .arrival-prob').toggleClass('d-none', !hasArrivalProb);
+            $('.customer-data-table .completion-prob').toggleClass('d-none', !hasCompletionProb);
+            $('.event-data-table .arrival-prob').toggleClass('d-none', !hasArrivalProb);
+            $('.event-data-table .completion-prob').toggleClass('d-none', !hasCompletionProb);
+
+            response.events.forEach(data => {
+                // Populate customer row template
+                let customerRow = $(customerRowTemplate);
+                customerRow.find('td').eq(0).text(data['Customer ID']);
+                customerRow.find('td').eq(1).text(data['Event Type']);
+                customerRow.find('td').eq(2).text(data['Clock Time']);
+                customerRow.find('td').eq(3).text(data['Service Code']);
+                customerRow.find('td').eq(4).text(data['Service Title']);
+                customerRow.find('td').eq(5).text(data['Service Duration']);
+                customerRow.find('td').eq(6).text(data['End Time']);
+                if (hasArrivalProb && data['Arrival Probability'] !== undefined) {customerRow.find('td').eq(7).text(data['Arrival Probability']); console.log(data['Arrival Probability'])}
+                else {customerRow.find('td').eq(7).remove(); console.log("WOW")}
+                if (hasCompletionProb && data['Completion Probability'] !== undefined) customerRow.find('td').eq(8).text(data['Completion Probability']);
+                else customerRow.find('td').eq(7).remove();
+                $customerTbody.append(customerRow);
+
+                // Populate event row template
+                let eventRow = $(eventRowTemplate);
+                eventRow.find('td').eq(0).text(data['Clock Time']);
+                eventRow.find('td').eq(1).text(data['Event Type']);
+                eventRow.find('td').eq(2).text(data['Customer ID']);
+                eventRow.find('td').eq(3).text(data['Service Title']);
+                if (hasArrivalProb && data['Arrival Probability'] !== undefined) eventRow.find('td').eq(4).text(data['Arrival Probability']);
+                else eventRow.find('td').eq(4).remove();
+                if (hasCompletionProb && data['Completion Probability'] !== undefined) eventRow.find('td').eq(5).text(data['Completion Probability']);
+                else eventRow.find('td').eq(4).remove();
+                $eventTbody.append(eventRow);
             });
 
             refreshPlot();
