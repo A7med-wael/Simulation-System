@@ -1,5 +1,6 @@
 $(document).ready(function () {
     clearDataAjax();
+    checkServiceList();
     let customerRowTemplate, eventRowTemplate, serviceItemTemplate, flashMessageTemplate;
 
     // Load templates via AJAX
@@ -50,6 +51,14 @@ $(document).ready(function () {
         );
     }
 
+    function checkServiceList() {
+        if ($('.service-list ul').children().length > 0) {
+            $('.current-services').removeClass('d-none');
+        } else {
+            $('.current-services').addClass('d-none');
+        }
+    }
+
     function showFlashMessage(alertType, message, classAlertType) {
         const flashMessageHTML = flashMessageTemplate
             .replace('{{ alert_type }}', alertType)
@@ -73,7 +82,9 @@ $(document).ready(function () {
         $('.customer-data-table tbody').empty();
         $('.event-data-table tbody').empty();
         $('.service-list ul').empty();
+
         refreshPlot();
+        checkServiceList();
     }
 
     function handleFileUpload(e) {
@@ -111,6 +122,8 @@ $(document).ready(function () {
             console.error('No data available in response', response);
             showFlashMessage('Warning!', 'No data received from the server.', 'warning');
         }
+
+        checkServiceList();
     }
 
     function simulateCustomers() {
@@ -221,6 +234,7 @@ $(document).ready(function () {
     }
 
     function refreshPlot() {
-        $('#plot').attr('src', '/plot.png?' + new Date().getTime()); // Add timestamp to bypass cache
+        $('#arrival_plot').attr('src', '/arrival_plot.png?' + new Date().getTime());
+        $('#system_state_plot').attr('src', '/customers_system_plot.png?' + new Date().getTime());
     }
 });

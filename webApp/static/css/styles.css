@@ -6,9 +6,7 @@ body {
     max-height: 200px;
     overflow-y: auto;
 }
-.chart-container {
-    height: 400px;
-}
+
 .table-container {
     max-height: 300px;
     overflow-y: auto;
@@ -35,7 +33,7 @@ body {
     padding: 10px;
 }
 
-.chart-container img {
+.plot-container img {
     max-width: 100%;
     max-height: 100%;
 }

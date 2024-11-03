@@ -21,9 +21,13 @@ def simulate_customers():
     data_service.current_data = simulation_service.simulate_customers(data_service.services)
     return jsonify({'success': True, 'events': data_service.current_data.to_dict('records')})
 
-@app.route('/plot.png')
-def plot_png():
-    return send_file(plot_service.generate_plot(data_service.current_data), mimetype='image/png')
+@app.route('/arrival_plot.png')
+def arrival_plot_png():
+    return send_file(plot_service.generate_arrival_and_service_times_plot(data_service.current_data), mimetype='image/png')
+
+@app.route('/customers_system_plot.png')
+def customers_system_plot_png():
+    return send_file(plot_service.generate_customers_in_system_plot(data_service.current_data), mimetype='image/png')
 
 @app.route('/upload_file', methods=['POST'])
 def upload_file():

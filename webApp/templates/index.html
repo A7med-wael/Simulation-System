@@ -32,7 +32,7 @@
             </div>
 
             <!-- Current Services -->
-            <div class="card my-2">
+            <div class="card my-2 current-services d-none">
                 <div class="card-header bg-dark text-white"><i class="fas fa-list"></i> Current Services</div>
                 <div class="card-body service-list">
                     <ul class="list-group">
@@ -42,7 +42,7 @@
             </div>
 
             <!-- Add New Service Section -->
-            <div class="card mb-2">
+            <div class="card my-2">
                 <div class="card-header bg-dark text-white"><i class="fas fa-plus"></i> Add New Service</div>
                 <div class="card-body">
                     <form id="addServiceForm">
@@ -111,9 +111,44 @@
 
             <!-- System State Graph -->
             <div class="card mb-1">
-                <div class="card-header bg-dark text-white"><i class="fas fa-chart-line"></i> System State Graph</div>
-                <div class="card-body chart-container">
-                    <img id="plot" src="/plot.png" alt="System State Graph">
+                <div class="card-header bg-dark text-white">
+                    <i class="fas fa-chart-line"></i> System State Graph
+                </div>
+                <div class="row">
+                    <div class="col-md-12">
+                        <div class="card-body">
+                            <!-- Tab navigation -->
+                            <ul class="nav nav-tabs" id="plotTab" role="tablist">
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link active" id="arrival-tab" data-bs-toggle="tab" data-bs-target="#arrival" type="button" role="tab" aria-controls="arrival" aria-selected="true">
+                                        Arrival Plot
+                                    </button>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link" id="system_state-tab" data-bs-toggle="tab" data-bs-target="#system_state" type="button" role="tab" aria-controls="system_state" aria-selected="false">
+                                        System State Plot
+                                    </button>
+                                </li>
+                            </ul>
+
+                            <!-- Tab content -->
+                            <div class="tab-content mt-3" id="plotTabContent">
+                                <!-- First Tab -->
+                                <div class="tab-pane fade show active" id="arrival" role="tabpanel" aria-labelledby="arrival-tab">
+                                    <div class="plot-container">
+                                        <img id="arrival_plot" src="/arrival_plot.png" alt="System State Graph">
+                                    </div>
+                                </div>
+
+                                <!-- Second Tab -->
+                                <div class="tab-pane fade" id="system_state" role="tabpanel" aria-labelledby="system_state-tab">
+                                    <div class="plot-container">
+                                        <img id="system_state_plot" src="/customers_system_plot.png" alt="System State Over Time">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
