@@ -444,7 +444,6 @@ class _HomePageState extends State<HomePage> {
 
     try {
       double arrivalProbability = 0.6; // 60% chance of customer arrival
-      double serviceCompletionProbability = 0.8;
       int maxCustomers = 20;
       List<CustomerEvent> simulatedData = [];
       int arrivalTime = 0;
