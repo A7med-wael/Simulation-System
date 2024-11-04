@@ -2,11 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'pages/home_page.dart';
 
-void main() {
-  runApp(
-    const SimulationClockTable(),
-  );
-}
+void main() => runApp(const SimulationClockTable());
 
 class SimulationClockTable extends StatelessWidget {
   const SimulationClockTable({super.key});
