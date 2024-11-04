@@ -31,20 +31,67 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: _buildAppBar(),
+      appBar: AppBar(
+        backgroundColor: PrimaryColor,
+        title: const Text(
+          'Simulation Clock Table',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 25,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ),
+      drawer: Drawer(
+        child: ListView(
+          padding: EdgeInsets.zero,
+          children: [
+            DrawerHeader(
+              decoration: BoxDecoration(
+                color: PrimaryColor,
+              ),
+              child: Text(
+                'Menu',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 30,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+            ExpansionTile(
+              title: Text('Actions'),
+              leading: Icon(Icons.touch_app),
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: _buildActionButtons(),
+                ),
+              ],
+            ),
+            ExpansionTile(
+              title: Text('Add Service'),
+              leading: Icon(Icons.add),
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: _buildServiceForm(),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
       body: Center(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
           child: ListView(
             children: [
-              _buildActionButtons(),
-              const SizedBox(height: 20),
-              _buildServiceForm(),
               const SizedBox(height: 20),
               buildGraphDisplay(),
-              const SizedBox(height: 20),
+              const SizedBox(height: 40),
               buildCustomerDataTable(),
-              const SizedBox(height: 20),
+              const SizedBox(height: 30),
               buildChronologicalEventsTable(),
             ],
           ),
@@ -53,37 +100,18 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  AppBar _buildAppBar() {
-    return AppBar(
-      backgroundColor: PrimaryColor,
-      title: const Text(
-        'Simulation Clock Table',
-        style: TextStyle(
-          color: Colors.white,
-          fontSize: 25,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
-    );
-  }
-
   Widget _buildActionButtons() {
     return Column(
       children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: [
-            CustomButton(onPressed: initializeData, text: 'Upload File'),
-            CustomButton(
-                onPressed: () {
-                  setState(() {
-                    showProbabilityColumns = false;
-                    generateCustomers();
-                  });
-                },
-                text: 'Simulate'),
-          ],
-        ),
+        CustomButton(onPressed: initializeData, text: 'Upload File'),
+        CustomButton(
+            onPressed: () {
+              setState(() {
+                showProbabilityColumns = false;
+                generateCustomers();
+              });
+            },
+            text: 'Simulate'),
         CustomButton(
             onPressed: () {
               setState(() {
@@ -92,13 +120,8 @@ class _HomePageState extends State<HomePage> {
               });
             },
             text: 'Probability'),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: [
-            CustomButton(onPressed: saveAllData, text: 'Save Data'),
-            CustomButton(onPressed: clearAllData, text: 'Clear Data'),
-          ],
-        ),
+        CustomButton(onPressed: saveAllData, text: 'Save Data'),
+        CustomButton(onPressed: clearAllData, text: 'Clear Data'),
       ],
     );
   }
@@ -240,8 +263,8 @@ class _HomePageState extends State<HomePage> {
         'Service Title': event.serviceTitle,
         'Service Duration': event.serviceDuration,
         'End Time': event.endTime,
-        'Arrival Probability': event.arrivalProb.substring(0, 5),
-        'Completion Probability': event.completionProb.substring(0, 5),
+        'Arrival Probability': event.arrivalProb,
+        'Completion Probability': event.completionProb,
       };
     }).toList();
 
@@ -249,25 +272,34 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget buildCustomerDataTable() {
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: DataTable(
-        columns: [
-          const DataColumn(label: Text('Customer ID')),
-          const DataColumn(label: Text('Event Type')),
-          const DataColumn(label: Text('Clock Time')),
-          const DataColumn(label: Text('Service Code')),
-          const DataColumn(label: Text('Service Title')),
-          const DataColumn(label: Text('Service Duration')),
-          const DataColumn(label: Text('End Time')),
-          if (showProbabilityColumns)
-            const DataColumn(
-                label: Text('Arrival Probability')), // Show Probability Column
-          if (showProbabilityColumns)
-            const DataColumn(label: Text('Completion Probability')),
-        ],
-        rows: newData.map((data) => _buildDataRow(data)).toList(),
-      ),
+    return Column(
+      children: [
+        const Text(
+          'Customer Data Table',
+          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+        ),
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: DataTable(
+            columns: [
+              const DataColumn(label: Text('Customer ID')),
+              const DataColumn(label: Text('Event Type')),
+              const DataColumn(label: Text('Clock Time')),
+              const DataColumn(label: Text('Service Code')),
+              const DataColumn(label: Text('Service Title')),
+              const DataColumn(label: Text('Service Duration')),
+              const DataColumn(label: Text('End Time')),
+              if (showProbabilityColumns)
+                const DataColumn(
+                    label:
+                        Text('Arrival Probability')), // Show Probability Column
+              if (showProbabilityColumns)
+                const DataColumn(label: Text('Completion Probability')),
+            ],
+            rows: newData.map((data) => _buildDataRow(data)).toList(),
+          ),
+        ),
+      ],
     );
   }
 
@@ -296,7 +328,6 @@ class _HomePageState extends State<HomePage> {
             'Chronological Order of Events',
             style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
-          const SizedBox(height: 10),
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             child: DataTable(
@@ -348,14 +379,14 @@ class _HomePageState extends State<HomePage> {
       return;
     }
 
-    currentData.clear();
+    List<CustomerEvent> tempEvents = [];
 
     try {
-      int customerCount = Random().nextInt(6) + 5; // Between 5 and 10 customers
+      int customerCount = Random().nextInt(6) + 5;
       int arrivalTime = 0;
 
       for (int i = 1; i <= customerCount; i++) {
-        int interval = Random().nextInt(3) + 1; // Between 1 and 3 minutes
+        int interval = Random().nextInt(3) + 1;
         arrivalTime += interval;
 
         var randomServiceKey =
@@ -367,8 +398,7 @@ class _HomePageState extends State<HomePage> {
 
         int departureTime = arrivalTime + serviceDuration;
 
-        // Add arrival event
-        currentData.add(CustomerEvent(
+        tempEvents.add(CustomerEvent(
           customerId: i.toString(),
           eventType: "Arrival",
           clockTime: arrivalTime.toString(),
@@ -378,8 +408,7 @@ class _HomePageState extends State<HomePage> {
           endTime: departureTime.toString(),
         ));
 
-        // Add departure event
-        currentData.add(CustomerEvent(
+        tempEvents.add(CustomerEvent(
           customerId: i.toString(),
           eventType: "Departure",
           clockTime: departureTime.toString(),
@@ -390,6 +419,13 @@ class _HomePageState extends State<HomePage> {
         ));
       }
 
+      tempEvents.sort((a, b) {
+        return int.parse(a.clockTime).compareTo(int.parse(b.clockTime));
+      });
+
+      currentData.clear();
+      currentData.addAll(tempEvents);
+
       setState(() {
         updateDisplays();
       });
@@ -397,7 +433,7 @@ class _HomePageState extends State<HomePage> {
         context: context,
         builder: (context) => AlertDialog(
           title: const Text('Simulation Complete'),
-          content: const Text('simulation process completed successfully!'),
+          content: const Text('Simulation process completed successfully!'),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
@@ -443,7 +479,7 @@ class _HomePageState extends State<HomePage> {
     }
 
     try {
-      double arrivalProbability = 0.6; // 60% chance of customer arrival
+      double arrivalProbability = 0.6;
       int maxCustomers = 20;
       List<CustomerEvent> simulatedData = [];
       int arrivalTime = 0;
@@ -452,7 +488,6 @@ class _HomePageState extends State<HomePage> {
         if (Random().nextDouble() <= arrivalProbability) {
           arrivalTime += Random().nextInt(3) + 1;
 
-          // Select a random service
           var randomServiceKey =
               services.keys.elementAt(Random().nextInt(services.length));
           var serviceInfo = services[randomServiceKey]!;
@@ -460,11 +495,9 @@ class _HomePageState extends State<HomePage> {
               int.tryParse(serviceInfo['serviceDuration']) ?? 0;
           int departureTime = arrivalTime + serviceDuration;
 
-          // Probability values for arrival and service completion
           double arrivalProb = Random().nextDouble();
           double completionProb = Random().nextDouble();
 
-          // Add Arrival event
           simulatedData.add(
             CustomerEvent(
               customerId: customerId.toString(),
@@ -474,12 +507,11 @@ class _HomePageState extends State<HomePage> {
               serviceTitle: serviceInfo['serviceTitle'],
               serviceDuration: serviceDuration.toString(),
               endTime: departureTime.toString(),
-              arrivalProb: arrivalProb.toString(),
-              completionProb: completionProb.toString(),
+              arrivalProb: arrivalProb.toStringAsFixed(2),
+              completionProb: completionProb.toStringAsFixed(2),
             ),
           );
 
-          // Add Departure event
           simulatedData.add(
             CustomerEvent(
               customerId: customerId.toString(),
@@ -489,12 +521,16 @@ class _HomePageState extends State<HomePage> {
               serviceTitle: serviceInfo['serviceTitle'],
               serviceDuration: serviceDuration.toString(),
               endTime: departureTime.toString(),
-              arrivalProb: arrivalProb.toString(),
-              completionProb: completionProb.toString(),
+              arrivalProb: arrivalProb.toStringAsFixed(2),
+              completionProb: completionProb.toStringAsFixed(2),
             ),
           );
         }
       }
+
+      simulatedData.sort((a, b) {
+        return int.parse(a.clockTime).compareTo(int.parse(b.clockTime));
+      });
 
       if (simulatedData.isNotEmpty) {
         setState(() {
@@ -502,7 +538,6 @@ class _HomePageState extends State<HomePage> {
           updateDisplays();
         });
 
-        // Show a success message
         showDialog(
           context: context,
           builder: (context) => AlertDialog(
@@ -518,7 +553,6 @@ class _HomePageState extends State<HomePage> {
           ),
         );
       } else {
-        // No events generated
         showDialog(
           context: context,
           builder: (context) => AlertDialog(
@@ -534,7 +568,6 @@ class _HomePageState extends State<HomePage> {
         );
       }
     } catch (e) {
-      // Handle any errors that occur during the simulation
       showDialog(
         context: context,
         builder: (context) => AlertDialog(
