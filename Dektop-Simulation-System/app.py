@@ -9,7 +9,6 @@ import os
 from ThemeManager import ThemeManager
 import ttkbootstrap as ttkboot
 from ttkbootstrap.constants import *
-from PIL import Image, ImageTk 
 from datetime import timedelta
 
 class QueuingSystemGUI:
@@ -48,47 +47,16 @@ class QueuingSystemGUI:
         
         self.show_probability_columns = False
         self.control_panel_visible = True
-        self.data_visible = False
+        self.data_visible = True
         
         # Setup GUI components
         self.setup_gui()
         
         # Initially hide the data frames and show logo
-        self.hide_data_frames()
-        
+        self.create_data_frames()
+        self.show_data_frames()
         # Apply initial theme
         self.apply_theme()
-
-    def create_empty_state(self) -> None:
-        """Create the initial empty state with logo."""
-        self.empty_state_frame = ttk.Frame(self.right_panel)
-        
-        # Create a canvas for the logo
-        canvas = tk.Canvas(self.empty_state_frame, width=400, height=400, bg='#f0f0f0', highlightthickness=0)
-        canvas.pack(expand=True)
-        
-        # Draw a simple queue logo (you can replace this with your own logo image)
-        # This is a simple placeholder logo
-        canvas.create_oval(150, 150, 250, 250, fill="#4a90e2", outline="")
-        canvas.create_line(200, 250, 200, 300, fill="#4a90e2", width=3)
-        canvas.create_line(180, 280, 220, 280, fill="#4a90e2", width=3)
-        
-        # Add welcome text
-        canvas.create_text(200, 320, text="Welcome to Queuing System Simulation",
-                         font=('Helvetica', 14, 'bold'), fill="#333")
-        canvas.create_text(200, 350, 
-                         text="Use the control panel on the left to get started",
-                         font=('Helvetica', 12), fill="#666")
-        
-        self.empty_state_frame.pack(fill="both", expand=True)
-        
-        # Hide all data frames initially
-        if hasattr(self, 'data_frame'):
-            self.data_frame.pack_forget()
-        if hasattr(self, 'chrono_frame'):
-            self.chrono_frame.pack_forget()
-        if hasattr(self, 'graph_frame'):
-            self.graph_frame.pack_forget()
 
     def create_theme_switch(self) -> None:
         """Create the theme switch button."""
