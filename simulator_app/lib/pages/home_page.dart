@@ -4,6 +4,10 @@ import 'package:excel/excel.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:simulator_app/constents.dart';
+import 'package:simulator_app/models/customer_event.dart';
+import 'package:flutter/src/painting/box_border.dart' as box_border;
+import '../widgets/custom_button.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -23,6 +27,7 @@ class _HomePageState extends State<HomePage> {
   Map<String, Map<String, dynamic>> services = {};
   List<FlSpot> graphDataPoints = [];
 
+  bool showProbabilityColumns = false;
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -50,8 +55,7 @@ class _HomePageState extends State<HomePage> {
 
   AppBar _buildAppBar() {
     return AppBar(
-      backgroundColor:
-          Colors.blue, // Replace `PrimaryColor` with a color directly
+      backgroundColor: PrimaryColor,
       title: const Text(
         'Simulation Clock Table',
         style: TextStyle(
@@ -63,32 +67,39 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  // Action buttons for uploading file, simulating data, saving, and clearing data
   Widget _buildActionButtons() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceAround,
-      children: [
-        _buildColumnButtons([
-          CustomButton(onPressed: initializeData, text: 'Upload File'),
-          CustomButton(onPressed: generateCustomers, text: 'Simulate'),
-        ]),
-        const Divider(thickness: 2),
-        _buildColumnButtons([
-          CustomButton(onPressed: saveAllData, text: 'Save Data'),
-          CustomButton(onPressed: clearAllData, text: 'Clear Data'),
-        ]),
-      ],
-    );
-  }
-
-  Widget _buildColumnButtons(List<Widget> buttons) {
     return Column(
-      children: buttons
-          .map((button) => Padding(
-                padding: const EdgeInsets.symmetric(vertical: 5),
-                child: button,
-              ))
-          .toList(),
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          children: [
+            CustomButton(onPressed: initializeData, text: 'Upload File'),
+            CustomButton(
+                onPressed: () {
+                  setState(() {
+                    showProbabilityColumns = false;
+                    generateCustomers();
+                  });
+                },
+                text: 'Simulate'),
+          ],
+        ),
+        CustomButton(
+            onPressed: () {
+              setState(() {
+                showProbabilityColumns = true;
+                probabilitySimulation();
+              });
+            },
+            text: 'Probability'),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          children: [
+            CustomButton(onPressed: saveAllData, text: 'Save Data'),
+            CustomButton(onPressed: clearAllData, text: 'Clear Data'),
+          ],
+        ),
+      ],
     );
   }
 
@@ -101,8 +112,10 @@ class _HomePageState extends State<HomePage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Add New Service',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+          const Center(
+            child: Text('Add New Service',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+          ),
           const SizedBox(height: 10),
           _buildTextInputField(
               controller: serviceCodeController, labelText: 'Service Code:'),
@@ -113,7 +126,12 @@ class _HomePageState extends State<HomePage> {
               labelText: 'Duration (min):',
               keyboardType: TextInputType.number),
           const SizedBox(height: 10),
-          _buildAddServiceButton(),
+          Center(
+            child: CustomButton(
+              onPressed: _addService,
+              text: 'Add Service',
+            ),
+          ),
         ],
       ),
     );
@@ -137,65 +155,82 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _buildAddServiceButton() {
-    return Center(
-      child: ElevatedButton(
-        style: ButtonStyle(
-          fixedSize: WidgetStateProperty.all(const Size(160, 40)),
-          backgroundColor: WidgetStateProperty.all(
-              Colors.blue), // Replace `PrimaryColor` here
-        ),
-        onPressed: _addService,
-        child: const Text(
-          'Add Service',
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      ),
-    );
-  }
-
-  // Initializes data from an Excel file
   Future<void> initializeData() async {
-    final result = await FilePicker.platform.pickFiles(
+    FilePickerResult? result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
       allowedExtensions: ['xlsx', 'xls'],
     );
 
     if (result != null && result.files.isNotEmpty) {
-      _processExcelFile(result.files.single.path!);
+      String? filePath = result.files.single.path;
+      var file = File(filePath!);
+      try {
+        var bytes = file.readAsBytesSync();
+        var excel = Excel.decodeBytes(bytes);
+        for (var table in excel.tables.keys) {
+          for (var row in excel.tables[table]!.rows) {
+            if (row.isNotEmpty) {
+              var serviceCode = row[0]?.value;
+              var serviceTitle = row[1]?.value;
+              var serviceDuration = row[2]?.value;
+
+              if (serviceCode != null &&
+                  serviceTitle != null &&
+                  serviceDuration != null) {
+                services[serviceCode.toString()] = {
+                  'serviceCode': serviceCode.toString(),
+                  'serviceTitle': serviceTitle.toString(),
+                  'serviceDuration': serviceDuration.toString(),
+                };
+              }
+            }
+          }
+        }
+
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('File Loaded'),
+            content: const Text('File loaded successfully.'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('OK'),
+              ),
+            ],
+          ),
+        );
+        print("Services Loaded: $services");
+        setState(() {
+          updateDisplays();
+        });
+      } catch (e) {
+        print('Error while processing Excel file: $e');
+      }
     } else {
       print('No file selected');
     }
   }
 
-  void _processExcelFile(String filePath) {
-    try {
-      final bytes = File(filePath).readAsBytesSync();
-      final excel = Excel.decodeBytes(bytes);
-      currentData = _extractExcelData(excel);
-      setState(() {
-        updateDisplays();
-      });
-    } catch (e) {
-      print('Error while processing Excel file: $e');
-    }
-  }
-
   void updateDisplays() {
-    // Update the graph data points based on currentData
-    graphDataPoints = List.generate(currentData.length, (index) {
-      // Ensure serviceDuration is parsed as a double
-      double serviceDuration =
-          double.tryParse(currentData[index].serviceDuration) ?? 0.0;
+    graphDataPoints = [];
+    double offset = 0.5; // Adjust this value to separate lines visually
 
-      return FlSpot(index.toDouble(), serviceDuration);
-    });
+    for (var event in currentData) {
+      if (event.eventType == "Arrival") {
+        double yValue =
+            double.parse(event.customerId); // Customer ID for y-axis
+        double startXValue = (double.tryParse(event.clockTime) ?? 0.0) +
+            (offset * int.parse(event.customerId)); // Arrival time
+        double endXValue = (double.tryParse(event.endTime) ?? 0.0) +
+            (offset * int.parse(event.customerId)); // Departure time
 
-    // Update newData with the currentData for the DataTables to display
+        // Add start and end points for each service duration
+        graphDataPoints.add(FlSpot(startXValue, yValue)); // Start of service
+        graphDataPoints.add(FlSpot(endXValue, yValue)); // End of service
+      }
+    }
+
     newData = currentData.map((event) {
       return {
         'Customer ID': event.customerId,
@@ -205,44 +240,31 @@ class _HomePageState extends State<HomePage> {
         'Service Title': event.serviceTitle,
         'Service Duration': event.serviceDuration,
         'End Time': event.endTime,
+        'Arrival Probability': event.arrivalProb.substring(0, 5),
+        'Completion Probability': event.completionProb.substring(0, 5),
       };
     }).toList();
 
-    setState(() {}); // Refresh the UI with the updated data
-  }
-
-  List<CustomerEvent> _extractExcelData(Excel excel) {
-    final List<CustomerEvent> data = [];
-    for (var table in excel.tables.keys) {
-      for (var row in excel.tables[table]!.rows) {
-        if (row.isNotEmpty) {
-          data.add(CustomerEvent(
-            customerId: row[0]?.value.toString() ?? '',
-            eventType: row[1]?.value.toString() ?? '',
-            clockTime: row[2]?.value.toString() ?? '',
-            serviceCode: row[3]?.value.toString() ?? '',
-            serviceTitle: row[4]?.value.toString() ?? '',
-            serviceDuration: row[5]?.value.toString() ?? '',
-            endTime: row[6]?.value.toString() ?? '',
-          ));
-        }
-      }
-    }
-    return data;
+    setState(() {});
   }
 
   Widget buildCustomerDataTable() {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: DataTable(
-        columns: const [
-          DataColumn(label: Text('Customer ID')),
-          DataColumn(label: Text('Event Type')),
-          DataColumn(label: Text('Clock Time')),
-          DataColumn(label: Text('Service Code')),
-          DataColumn(label: Text('Service Title')),
-          DataColumn(label: Text('Service Duration')),
-          DataColumn(label: Text('End Time')),
+        columns: [
+          const DataColumn(label: Text('Customer ID')),
+          const DataColumn(label: Text('Event Type')),
+          const DataColumn(label: Text('Clock Time')),
+          const DataColumn(label: Text('Service Code')),
+          const DataColumn(label: Text('Service Title')),
+          const DataColumn(label: Text('Service Duration')),
+          const DataColumn(label: Text('End Time')),
+          if (showProbabilityColumns)
+            const DataColumn(
+                label: Text('Arrival Probability')), // Show Probability Column
+          if (showProbabilityColumns)
+            const DataColumn(label: Text('Completion Probability')),
         ],
         rows: newData.map((data) => _buildDataRow(data)).toList(),
       ),
@@ -258,6 +280,10 @@ class _HomePageState extends State<HomePage> {
       DataCell(Text(data['Service Title'].toString())),
       DataCell(Text(data['Service Duration'].toString())),
       DataCell(Text(data['End Time'].toString())),
+      if (showProbabilityColumns)
+        DataCell(Text(data['Arrival Probability'].toString())),
+      if (showProbabilityColumns)
+        DataCell(Text(data['Completion Probability'].toString())),
     ]);
   }
 
@@ -274,16 +300,26 @@ class _HomePageState extends State<HomePage> {
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             child: DataTable(
-              columns: const [
-                DataColumn(label: Text('Time')),
-                DataColumn(label: Text('Event Type')),
-                DataColumn(label: Text('Details')),
+              columns: [
+                const DataColumn(label: Text('ID')),
+                const DataColumn(label: Text('Time')),
+                const DataColumn(label: Text('Event Type')),
+                const DataColumn(label: Text('Details')),
+                if (showProbabilityColumns)
+                  const DataColumn(label: Text('Arrival Probability')),
+                if (showProbabilityColumns)
+                  const DataColumn(label: Text('Completion Probability')),
               ],
               rows: currentData
                   .map((event) => DataRow(cells: [
+                        DataCell(Text(event.customerId)),
                         DataCell(Text(event.clockTime)),
                         DataCell(Text(event.eventType)),
                         DataCell(Text(event.serviceTitle)),
+                        if (showProbabilityColumns)
+                          DataCell(Text(event.arrivalProb)),
+                        if (showProbabilityColumns)
+                          DataCell(Text(event.completionProb)),
                       ]))
                   .toList(),
             ),
@@ -294,37 +330,344 @@ class _HomePageState extends State<HomePage> {
   }
 
   void generateCustomers() {
-    final random = Random();
-    const numberOfCustomers = 10;
-
-    for (int i = 0; i < numberOfCustomers; i++) {
-      final event = CustomerEvent(
-        customerId: 'Customer $i',
-        eventType: 'Arrival',
-        clockTime: '${random.nextInt(12) + 1}:${random.nextInt(60)}',
-        serviceCode: 'SC-${random.nextInt(100)}',
-        serviceTitle: 'Sample Service',
-        serviceDuration: random.nextInt(20).toString(),
-        endTime: '${random.nextInt(12) + 1}:${random.nextInt(60)}',
+    if (services.isEmpty) {
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Error'),
+          content: const Text(
+              'No services available! Please add services first or upload an Excel file.'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('OK'),
+            ),
+          ],
+        ),
       );
-      currentData.add(event);
+      return;
     }
 
-    updateDisplays();
+    currentData.clear();
+
+    try {
+      int customerCount = Random().nextInt(6) + 5; // Between 5 and 10 customers
+      int arrivalTime = 0;
+
+      for (int i = 1; i <= customerCount; i++) {
+        int interval = Random().nextInt(3) + 1; // Between 1 and 3 minutes
+        arrivalTime += interval;
+
+        var randomServiceKey =
+            services.keys.elementAt(Random().nextInt(services.length));
+        var selectedService = services[randomServiceKey]!;
+
+        String durationStr = selectedService['serviceDuration'].trim();
+        int serviceDuration = int.tryParse(durationStr) ?? 0;
+
+        int departureTime = arrivalTime + serviceDuration;
+
+        // Add arrival event
+        currentData.add(CustomerEvent(
+          customerId: i.toString(),
+          eventType: "Arrival",
+          clockTime: arrivalTime.toString(),
+          serviceCode: selectedService['serviceCode'],
+          serviceTitle: selectedService['serviceTitle'],
+          serviceDuration: serviceDuration.toString(),
+          endTime: departureTime.toString(),
+        ));
+
+        // Add departure event
+        currentData.add(CustomerEvent(
+          customerId: i.toString(),
+          eventType: "Departure",
+          clockTime: departureTime.toString(),
+          serviceCode: selectedService['serviceCode'],
+          serviceTitle: selectedService['serviceTitle'],
+          serviceDuration: serviceDuration.toString(),
+          endTime: departureTime.toString(),
+        ));
+      }
+
+      setState(() {
+        updateDisplays();
+      });
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Simulation Complete'),
+          content: const Text('simulation process completed successfully!'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('OK'),
+            ),
+          ],
+        ),
+      );
+    } catch (e) {
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Error'),
+          content: Text('Failed to generate customers: $e'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('OK'),
+            ),
+          ],
+        ),
+      );
+    }
   }
 
-  void saveAllData() {
-    print("Saving all data...");
-    // Code for saving all data
+  void probabilitySimulation() {
+    if (services.isEmpty) {
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Error'),
+          content:
+              const Text('No services available! Please add services first.'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('OK'),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+
+    try {
+      double arrivalProbability = 0.6; // 60% chance of customer arrival
+      double serviceCompletionProbability = 0.8;
+      int maxCustomers = 20;
+      List<CustomerEvent> simulatedData = [];
+      int arrivalTime = 0;
+
+      for (int customerId = 1; customerId <= maxCustomers; customerId++) {
+        if (Random().nextDouble() <= arrivalProbability) {
+          arrivalTime += Random().nextInt(3) + 1;
+
+          // Select a random service
+          var randomServiceKey =
+              services.keys.elementAt(Random().nextInt(services.length));
+          var serviceInfo = services[randomServiceKey]!;
+          int serviceDuration =
+              int.tryParse(serviceInfo['serviceDuration']) ?? 0;
+          int departureTime = arrivalTime + serviceDuration;
+
+          // Probability values for arrival and service completion
+          double arrivalProb = Random().nextDouble();
+          double completionProb = Random().nextDouble();
+
+          // Add Arrival event
+          simulatedData.add(
+            CustomerEvent(
+              customerId: customerId.toString(),
+              eventType: 'Arrival',
+              clockTime: arrivalTime.toString(),
+              serviceCode: serviceInfo['serviceCode'],
+              serviceTitle: serviceInfo['serviceTitle'],
+              serviceDuration: serviceDuration.toString(),
+              endTime: departureTime.toString(),
+              arrivalProb: arrivalProb.toString(),
+              completionProb: completionProb.toString(),
+            ),
+          );
+
+          // Add Departure event
+          simulatedData.add(
+            CustomerEvent(
+              customerId: customerId.toString(),
+              eventType: 'Departure',
+              clockTime: departureTime.toString(),
+              serviceCode: serviceInfo['serviceCode'],
+              serviceTitle: serviceInfo['serviceTitle'],
+              serviceDuration: serviceDuration.toString(),
+              endTime: departureTime.toString(),
+              arrivalProb: arrivalProb.toString(),
+              completionProb: completionProb.toString(),
+            ),
+          );
+        }
+      }
+
+      if (simulatedData.isNotEmpty) {
+        setState(() {
+          currentData = simulatedData;
+          updateDisplays();
+        });
+
+        // Show a success message
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Probability Simulation Complete'),
+            content: const Text(
+                'Probability-based simulation completed successfully!'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('OK'),
+              ),
+            ],
+          ),
+        );
+      } else {
+        // No events generated
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('No Data'),
+            content: const Text('No events were generated in this simulation.'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('OK'),
+              ),
+            ],
+          ),
+        );
+      }
+    } catch (e) {
+      // Handle any errors that occur during the simulation
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Error'),
+          content: Text('Failed to run probability simulation: $e'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('OK'),
+            ),
+          ],
+        ),
+      );
+    }
+  }
+
+  void saveAllData() async {
+    if (currentData.isEmpty) {
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text("Warning"),
+          content: const Text("No data to save!"),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text("OK"),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+
+    try {
+      String? filePath = await FilePicker.platform.saveFile(
+        dialogTitle: 'Save Excel File',
+        fileName: 'simulation_data.xlsx',
+      );
+
+      if (filePath != null) {
+        var excel = Excel.createExcel();
+        Sheet sheet = excel['Sheet1'];
+
+        sheet.appendRow([
+          TextCellValue('Customer ID'),
+          TextCellValue('Event Type'),
+          TextCellValue('Clock Time'),
+          TextCellValue('Service Code'),
+          TextCellValue('Service Title'),
+          TextCellValue('Service Duration'),
+          TextCellValue('End Time'),
+        ]);
+
+        for (var event in currentData) {
+          sheet.appendRow([
+            TextCellValue(event.customerId),
+            TextCellValue(event.eventType),
+            TextCellValue(event.clockTime),
+            TextCellValue(event.serviceCode),
+            TextCellValue(event.serviceTitle),
+            TextCellValue(event.serviceDuration),
+            TextCellValue(event.endTime),
+          ]);
+        }
+
+        List<int> bytes = excel.encode() ?? [];
+        File(filePath).writeAsBytesSync(bytes);
+
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text("Success"),
+            content: const Text("Data saved successfully!"),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text("OK"),
+              ),
+            ],
+          ),
+        );
+      }
+    } catch (e) {
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text("Error"),
+          content: Text("Failed to save data: ${e.toString()}"),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text("OK"),
+            ),
+          ],
+        ),
+      );
+    }
   }
 
   void clearAllData() {
-    print("Clearing all data...");
-    currentData.clear();
-    updateDisplays();
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text("Confirm Clear"),
+          content: const Text("Are you sure you want to clear all data?"),
+          actions: [
+            TextButton(
+              onPressed: () {
+                setState(() {
+                  newData.clear();
+                  currentData.clear();
+                  services.clear();
+                  graphDataPoints.clear();
+                });
+                Navigator.of(context).pop(); // Close the dialog
+              },
+              child: const Text("Yes"),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // Close the dialog
+              },
+              child: const Text("No"),
+            ),
+          ],
+        );
+      },
+    );
   }
 
-  // Adds a new service to the services map
   void _addService() {
     final serviceCode = serviceCodeController.text;
     final serviceTitle = serviceTitleController.text;
@@ -346,12 +689,12 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  // Displays the graph using the FlChart library
   Widget buildGraphDisplay() {
     return Container(
-      height: 200,
+      height: 300, // Adjust as needed for visibility
       width: double.infinity,
       decoration: BoxDecoration(
+        color: Colors.grey[200], // Subtle background color
         borderRadius: BorderRadius.circular(10),
       ),
       child: LineChart(
@@ -359,58 +702,100 @@ class _HomePageState extends State<HomePage> {
           lineBarsData: [
             LineChartBarData(
               spots: graphDataPoints,
-              isCurved: true,
-              color: Colors.blue, // Replace PrimaryColor here
-              belowBarData: BarAreaData(show: false),
+              isCurved: true, // Add smooth curves
+              gradient: const LinearGradient(
+                colors: [Colors.blueAccent, Colors.lightBlue],
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+              ), // Apply gradient to the line
+              belowBarData: BarAreaData(
+                show: true,
+                gradient: LinearGradient(
+                  colors: [
+                    Colors.blueAccent.withOpacity(0.3),
+                    Colors.lightBlue.withOpacity(0.0)
+                  ],
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                ),
+              ), // Show gradient fill below the line
+              dotData: FlDotData(
+                show: true,
+                getDotPainter: (spot, percent, barData, index) {
+                  return FlDotCirclePainter(
+                    radius: 4,
+                    color: Colors.redAccent, // Customize dot color
+                    strokeWidth: 2,
+                    strokeColor: Colors.blueAccent,
+                  );
+                },
+              ),
+              isStrokeCapRound: true,
+              barWidth: 3, // Thicker line width
             ),
           ],
-          gridData: const FlGridData(show: true),
-          titlesData: const FlTitlesData(show: true),
+          gridData: FlGridData(
+            show: true,
+            drawVerticalLine: true,
+            verticalInterval: 1,
+            horizontalInterval: 1,
+            getDrawingVerticalLine: (value) => FlLine(
+              color: Colors.grey.withOpacity(0.3),
+              strokeWidth: 1,
+              dashArray: [5, 5], // Dashed vertical lines
+            ),
+            getDrawingHorizontalLine: (value) => FlLine(
+              color: Colors.grey.withOpacity(0.3),
+              strokeWidth: 1,
+              dashArray: [5, 5], // Dashed horizontal lines
+            ),
+          ),
+          titlesData: FlTitlesData(
+            leftTitles: AxisTitles(
+              sideTitles: SideTitles(
+                showTitles: true,
+                reservedSize: 30,
+                getTitlesWidget: (value, meta) {
+                  return Padding(
+                    padding: const EdgeInsets.only(right: 8.0),
+                    child: Text(
+                      value.toInt().toString(),
+                      style: const TextStyle(color: Colors.blueAccent),
+                    ),
+                  ); // Display customer ID on the y-axis
+                },
+              ),
+            ),
+            bottomTitles: AxisTitles(
+              sideTitles: SideTitles(
+                showTitles: true,
+                reservedSize: 30,
+                getTitlesWidget: (value, meta) {
+                  return Padding(
+                    padding: const EdgeInsets.only(top: 8.0),
+                    child: Text(
+                      value.toInt().toString(),
+                      style: const TextStyle(color: Colors.blueAccent),
+                    ),
+                  ); // Display clock time on the x-axis
+                },
+              ),
+            ),
+            topTitles: const AxisTitles(
+              sideTitles: SideTitles(showTitles: false),
+            ),
+            rightTitles: const AxisTitles(
+              sideTitles: SideTitles(showTitles: false),
+            ),
+          ),
+          borderData: FlBorderData(
+            show: true,
+            border: box_border.Border.all(
+              color: Colors.blueAccent,
+              width: 1,
+            ),
+          ),
         ),
-      ),
-    );
-  }
-}
-
-class CustomerEvent {
-  final String customerId;
-  final String eventType;
-  final String clockTime;
-  final String serviceCode;
-  final String serviceTitle;
-  final String serviceDuration;
-  final String endTime;
-
-  CustomerEvent({
-    required this.customerId,
-    required this.eventType,
-    required this.clockTime,
-    required this.serviceCode,
-    required this.serviceTitle,
-    required this.serviceDuration,
-    required this.endTime,
-  });
-}
-
-class CustomButton extends StatelessWidget {
-  final VoidCallback onPressed;
-  final String text;
-
-  const CustomButton({
-    super.key,
-    required this.onPressed,
-    required this.text,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return ElevatedButton(
-      style: const ButtonStyle(
-          backgroundColor: WidgetStatePropertyAll(Colors.blue)),
-      onPressed: onPressed,
-      child: Text(
-        text,
-        style: const TextStyle(color: Colors.white, fontSize: 16),
       ),
     );
   }

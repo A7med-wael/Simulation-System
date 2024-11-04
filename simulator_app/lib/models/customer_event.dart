@@ -6,6 +6,8 @@ class CustomerEvent {
   final String serviceTitle;
   final String serviceDuration;
   final String endTime;
+  final String arrivalProb;
+  final String completionProb;
 
   CustomerEvent({
     required this.customerId,
@@ -15,5 +17,7 @@ class CustomerEvent {
     required this.serviceTitle,
     required this.serviceDuration,
     required this.endTime,
+     this.arrivalProb = '',
+     this.completionProb = '',
   });
 }

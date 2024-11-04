@@ -4,7 +4,7 @@ import 'pages/home_page.dart';
 
 void main() {
   runApp(
-    const SimulationClockTable(),
+    SimulationClockTable(),
   );
 }
 
@@ -13,7 +13,7 @@ class SimulationClockTable extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const MaterialApp(
+    return MaterialApp(
       debugShowCheckedModeBanner: false,
       home: HomePage(),
     );
