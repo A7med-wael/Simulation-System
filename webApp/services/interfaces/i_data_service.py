@@ -18,3 +18,6 @@ class IDataService(ABC):
     @abstractmethod
     def download_data(self) -> BytesIO:
         pass
+
+    def validate_numeric_data(self, *values):
+        pass

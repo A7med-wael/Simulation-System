@@ -1,7 +1,85 @@
- /* Custom CSS */
-body {
-    background-color: #f5f5f5;
+/* Light Mode Variables */
+.light-mode {
+    --text-color: #000;
+    --btn-bg: #3f4754;
+    --btn-color: #f8f9fa;
 }
+
+/* Dark Mode Variables */
+.dark-mode {
+    --text-color: #f8f9fa;
+    --btn-bg: #1f2937;
+    --btn-color: var(--text-color);
+}
+
+/* Custom CSS */
+
+.container-fluid {
+    display: flex;
+    flex-wrap: nowrap;
+}
+
+.sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    width: 250px;
+    background-color: var(--bs-secondary-bg); /* Modern dark blue-gray */
+    color: var(--text-color);
+    padding-top: 1rem;
+    z-index: 1000;
+    box-shadow: 2px 0 5px rgba(0,0,0,0.5);
+    transition: transform 0.3s ease; /* Slide effect */
+}
+
+.sidebar-collapsed {
+    transform: translateX(-100%);
+}
+
+.nav-link {
+    color: var(--text-color);
+    padding: 15px;
+    font-size: 1.1rem;
+    transition: background-color 0.3s ease;
+}
+
+.nav-link:not(.active) {
+    opacity: 50%;
+}
+
+.nav-link:hover {
+    opacity: 100%;
+}
+
+.main-content {
+    margin-left: 250px;
+    transition: margin-left 0.3s ease;
+}
+
+.main-content.collapsed {
+    margin: 0 91px;
+}
+
+#sidebarToggle {
+    position: fixed;
+    top: 10px;
+    left: 193px;
+    z-index: 1050;
+    background-color: var(--btn-bg);
+    color: var(--btn-color);
+    border: none;
+    border-radius: 5px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    padding: 10px 15px;
+    cursor: pointer;
+}
+
+#sidebarToggle.collapsed {
+    left: 260px;
+}
+
+
 .service-list {
     max-height: 200px;
     overflow-y: auto;

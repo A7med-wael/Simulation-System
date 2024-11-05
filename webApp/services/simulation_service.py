@@ -1,4 +1,6 @@
 import random
+from datetime import timedelta
+
 import pandas as pd
 from flask import jsonify
 from .interfaces.i_simulation_service import ISimulationService
@@ -78,3 +80,89 @@ class SimulationService(ISimulationService):
                 new_data.append(base_event_data)
 
         return pd.DataFrame(new_data)
+
+    def simulate_parallel_servers(self, servers_data, arrivals_data):
+        """Simulate customer arrivals and service times for parallel servers."""
+
+        # Check if the DataFrames are empty
+        if servers_data.empty or arrivals_data.empty:
+            return jsonify(
+                {'success': False, 'error': 'Please ensure both arrival and server probability tables have data.'})
+
+        simulation_period = timedelta(hours=1)
+        servers = {
+            'Able': {'available_from': timedelta(0), 'service_times': []},
+            'Baker': {'available_from': timedelta(0), 'service_times': []}
+        }
+
+        customers = []
+        arrival_time = timedelta(0)
+
+        def get_time_from_probability_table(random_value_, probability_table, key_name):
+            expected_key = 'Accumulative Probability' if 'Accumulative Probability' in probability_table.columns else 'Server Accumulative Probability'
+            print(probability_table.columns)
+            for index, row in probability_table.iterrows():
+                if random_value_ <= row[expected_key]:
+                    return row[key_name]
+            raise ValueError(f"No matching entry found in the probability table for random value: {random_value_}")
+
+        # Main simulation loop for customer arrivals and service
+        while arrival_time < simulation_period:
+            random_value = random.random()
+            time_between_arrivals = get_time_from_probability_table(random_value, arrivals_data, 'Time Between Arrival')
+            arrival_time += timedelta(minutes=time_between_arrivals)
+
+            # Determine the assigned server
+            assigned_server = self.assign_server(servers, arrival_time)
+
+            random_value = random.random()
+            service_time = get_time_from_probability_table(random_value, servers_data, 'Service Time')
+
+            start_time = max(arrival_time, servers[assigned_server]['available_from'])
+            end_time = start_time + timedelta(minutes=service_time)
+
+            # Construct customer record
+            customer_info = {
+                'Customer ID': len(customers) + 1,
+                'Clock Time': arrival_time.total_seconds() / 60,
+                'Event Type': 'Arrival',
+                'Service Duration': service_time,
+                'End Time': end_time.total_seconds() / 60,
+                'Server': assigned_server,
+                'Wait Time': (start_time - arrival_time).total_seconds() / 60,
+                'Service Time': service_time
+            }
+            customers.append(customer_info)
+
+            # Update server availability and service time
+            servers[assigned_server]['available_from'] = end_time
+            servers[assigned_server]['service_times'].append(service_time)
+
+        # Create DataFrame and metrics
+        df_customers = pd.DataFrame(customers)
+        metrics = self.calculate_metrics(df_customers, servers, simulation_period)
+
+        return df_customers, metrics
+
+    def assign_server(self, servers, arrival_time):
+        """Assign the server based on availability and service time."""
+        if servers['Able']['available_from'] <= arrival_time:
+            return 'Able'
+        elif servers['Baker']['available_from'] <= arrival_time:
+            return 'Baker'
+        else:
+            return 'Able' if servers['Able']['available_from'] < servers['Baker']['available_from'] else 'Baker'
+
+    def calculate_metrics(self, df_customers, servers, simulation_period):
+        """Calculate performance metrics for the servers."""
+        total_simulation_time = simulation_period.total_seconds() / 60
+        able_busy_time = min(sum(servers['Able']['service_times']), total_simulation_time)
+        baker_busy_time = min(sum(servers['Baker']['service_times']), total_simulation_time)
+
+        metrics = {
+            'Able Utilization Rate': f"{min(able_busy_time / total_simulation_time, 1.0):.2%}",
+            'Baker Utilization Rate': f"{min(baker_busy_time / total_simulation_time, 1.0):.2%}",
+            'Average Waiting Time': f"{df_customers['Wait Time'].mean():.2f} minutes",
+            'Total Customers': len(df_customers)
+        }
+        return metrics

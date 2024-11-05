@@ -22,6 +22,9 @@ This is a **Queuing System Simulation** tool built using **Python** and **Flask*
 ![App Screenshot Placeholder](simulation-app-web-4.png)
 ![App Screenshot Placeholder](simulation-app-web-3.png)
 
+### Web-App (Version 1.5)
+![App Screenshot Placeholder](simulation-app-web-5.png)
+![App Screenshot Placeholder](simulation-app-web-6.png)
 
 ### Desktop-App
 ![App Screenshot Placeholder](simulation-app-desk.png)
@@ -92,7 +95,6 @@ pip install pandas matplotlib
 ```
 
 ## Project Structure
-
 ```
 Simulation-System/
 │
@@ -110,21 +112,30 @@ Simulation-System/
 │     │
 │     ├── static/                # Contains static assets for the web application.
 │     │      ├── assets/         # Contains additional assets, such as fonts.
-│     │      │      └── font-awesome/*  # Font Awesome icons and related files.
+│     │      │      ├── font-awesome/*  # Font Awesome icons and related files.
+│     │      │      └── favicon.ico     # Favicon for the Web App
 │     │      │
 │     │      ├── css/            # Contains CSS stylesheets for the application.
 │     │      │     ├── bootstrap.min.css  # Minified Bootstrap CSS file.
 │     │      │     └── styles.css  # Custom stylesheet for the application.
 │     │      │
 │     │      ├── js/             # Contains JavaScript files for interactivity.
-│     │      │    ├── bootstrap.bundle.min.js  # Minified Bootstrap JavaScript bundle.
-│     │      │    ├── jquery.min.js  # Minified jQuery library.
-│     │      │    └── scripts.js  # Custom JavaScript for the application.
+│     │      │    ├── bootstrap.bundle.min.js     # Minified Bootstrap JavaScript bundle.
+│     │      │    ├── jquery.min.js               # Minified jQuery library.
+│     │      │    ├── main.js                     # Main JavaScript file for global functions.
+│     │      │    ├── templates.js                # JavaScript for handling HTML templates.
+│     │      │    ├── utils.js                    # Utility functions for the application.
+│     │      │    ├── ajax.js                     # JavaScript for AJAX requests.
+│     │      │    ├── singleServer.js             # JavaScript for single-server simulation.
+│     │      │    └── parallelServer.js           # JavaScript for parallel-server simulation.
 │     │      │
 │     │      └── templates/       # Contains HTML templates for rendering views.
+│     │             ├── arrivalRowTemplate.html   # Template for rendering arrival rows.
 │     │             ├── customerRowTemplate.html  # Template for rendering customer rows.
 │     │             ├── eventRowTemplate.html     # Template for rendering event rows.
-│     │             ├── serviceItemTemplate.html   # Template for rendering service items.
+│     │             ├── serverRowTemplate.html    # Template for rendering server rows.
+│     │             ├── serversRowTemplate.html   # Template for rendering servers simulation result rows.
+│     │             ├── serviceItemTemplate.html  # Template for rendering service items.
 │     │             └── flash-messages.html       # Template for displaying flash messages.
 │     │
 │     ├── templates/              # Contains main application templates.
@@ -132,7 +143,7 @@ Simulation-System/
 │     │
 │     └── app.py                  # Main application code and entry point for the web application.
 │
-├── .ginignore                    # Git ignore file to exclude files from version control.
+├── .gitignore                    # Git ignore file to exclude files from version control.
 ├── queuing_data.xlsx             # Example service data file (optional).
 ├── requirements.txt              # Lists the dependencies required for the project.
 └── README.md                     # Project documentation including setup and usage instructions.

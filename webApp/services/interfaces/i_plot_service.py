@@ -19,6 +19,10 @@ class IPlotService(ABC):
         pass
 
     @abstractmethod
+    def generate_parallel_servers_plot(self, data):
+        pass
+
+    @abstractmethod
     def _save_plot_to_output(self, fig) -> BytesIO:
         pass
 
@@ -44,4 +48,13 @@ class IPlotService(ABC):
         pass
 
     def _configure_graph(self, ax):
+        pass
+
+    def _plot_server_timelines(self, ax, data):
+        pass
+
+    def _plot_customer_events(self, ax, data):
+        pass
+
+    def _configure_multi_server_plot(self, ax, data):
         pass

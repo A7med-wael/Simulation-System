@@ -2,7 +2,6 @@ from io import BytesIO
 import matplotlib.pyplot as plt
 from .interfaces.i_plot_service import IPlotService
 
-
 class PlotService(IPlotService):
     def __init__(self):
         pass  # No shared instance data to avoid interference between plots
@@ -147,3 +146,77 @@ class PlotService(IPlotService):
         plt.close(fig)
         output.seek(0)
         return output
+
+    def generate_parallel_servers_plot(self, data):
+        """Generate a plot showing parallel server timelines and customer events."""
+        if data.empty:
+            return self._generate_empty_plot("Parallel Servers Simulation Timeline")
+
+        fig, ax = self._initialize_plot("Parallel Servers Simulation Timeline")
+        self._plot_server_timelines(ax, data)
+        self._plot_customer_events(ax, data)
+        self._configure_multi_server_plot(ax, data)
+        return self._save_plot_to_output(fig)
+
+    def _plot_server_timelines(self, ax, data):
+        """Plot horizontal timelines for each server on the graph."""
+        ax.get_figure().set_facecolor('white')
+
+        server_positions = {'Able': 1, 'Baker': 2}
+        for server, position in server_positions.items():
+            ax.hlines(
+                position, 0, data['End Time'].max(),
+                colors='gray', linestyles='--', alpha=0.3,
+                label=f'{server} Timeline'
+            )
+
+    def _plot_customer_events(self, ax, data):
+        """Plot customer arrival, waiting, and service events."""
+        server_positions = {'Able': 1, 'Baker': 2}
+        colors = {'Able': '#2ecc71', 'Baker': '#3498db'}
+
+        # Track which labels have been added to avoid duplicates
+        labels_added = {'Arrival': False, 'Wait Time': False, 'Able Service': False, 'Baker Service': False}
+
+        for _, row in data.iterrows():
+            server_pos = server_positions[row['Server']]
+            service_start = row['Clock Time'] + row['Wait Time']
+
+            # Arrival point
+            ax.scatter(row['Clock Time'], 0, color='#e74c3c', marker='o',
+                       label='Arrival' if not labels_added['Arrival'] else "")
+            labels_added['Arrival'] = True
+
+            # Waiting timeline (if any)
+            if row['Wait Time'] > 0:
+                ax.vlines(row['Clock Time'], 0, server_pos,
+                          colors='#f1c40f', linestyles=':',
+                          label='Wait Time' if not labels_added['Wait Time'] else "")
+                labels_added['Wait Time'] = True
+
+            # Service duration with separate labels for Able and Baker
+            service_label = f'{row["Server"]} Service'
+            ax.hlines(server_pos, service_start, row['End Time'],
+                      colors=colors[row['Server']], linewidth=6, alpha=0.7,
+                      label=service_label if not labels_added[service_label] else "")
+            labels_added[service_label] = True
+
+            # Customer ID label
+            ax.text(row['Clock Time'], -0.2, f'C{row["Customer ID"]}',
+                    fontsize=8, rotation=45, ha='right', va='top')
+
+    def _configure_multi_server_plot(self, ax, data):
+        """Customize the plot with labels, legends, and axis settings."""
+        ax.set_ylim(-0.5, 2.5)
+        ax.set_xlim(-2, data['End Time'].max() + 2)
+        ax.set_yticks([0, 1, 2])
+        ax.set_yticklabels(['Arrivals', 'Server Able', 'Server Baker'])
+
+        ax.set_xlabel('Time (minutes)', fontsize=12)
+        ax.set_title('Parallel Servers Simulation Timeline', fontsize=14)
+        ax.grid(True, alpha=0.2)
+
+        # Add legend, ensuring unique entries
+        handles, labels = ax.get_legend_handles_labels()
+        by_label = dict(zip(labels, handles))
+        ax.legend(by_label.values(), by_label.keys(), loc='upper left', bbox_to_anchor=(1, 1))
