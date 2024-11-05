@@ -46,7 +46,7 @@ class QueuingSystemGUI:
         self.main_container.pack(fill="both", expand=True, padx=10, pady=5)
         
         self.show_probability_columns = False
-        self.control_panel_visible = True
+        self.control_panel_visible = False
         self.data_visible = True
         
         # Setup GUI components
@@ -170,7 +170,17 @@ class QueuingSystemGUI:
 
         # Create the left sidebar notebook
         self.sidebar = ttk.Notebook(self.main_container, style="Vertical.TNotebook")
-        self.sidebar.pack(side="left", fill="y", padx=(0, 0), pady=(0, 0))
+        self.sidebar.pack(side="left", fill="y", expand=False)
+
+        # Track the state of each tab
+        self.tab_states = {
+            'control': False,
+            'service': False,
+            'parallel': False
+        }
+        
+        # Store the currently open tab (None if no tab is open)
+        self.current_tab = None
 
         # Configure style for VSCode-like appearance
         style = ttk.Style()
@@ -178,7 +188,7 @@ class QueuingSystemGUI:
             "Vertical.TNotebook", 
             background=theme['bg'],
             borderwidth=0,
-            tabposition="wn",  # West position for tabs
+            tabposition="wn",
             padding=0
         )
         style.configure(
@@ -194,7 +204,7 @@ class QueuingSystemGUI:
             background=[
                 ("selected", theme['selected_bg']),
                 ("!selected", theme['bg']),
-                ("active", theme['selected_bg']),  # Hover effect
+                ("active", theme['selected_bg']),
                 ("disabled", theme['bg'])
             ],
             foreground=[
@@ -208,90 +218,114 @@ class QueuingSystemGUI:
         # Apply the vertical style to the notebook
         self.sidebar.configure(style="Vertical.TNotebook")
 
-        # Create frames for each tab
-        self.control_tab = ttk.Frame(self.sidebar, style="TFrame")
-        self.service_tab = ttk.Frame(self.sidebar, style="TFrame")
-        self.toggle_tab = ttk.Frame(self.sidebar, style="TFrame")  # New toggle tab frame
-        self.Parallel_server_tab = ttk.Frame(self.sidebar, style="TFrame")
+        # Create container frames for each tab
+        self.control_container = ttk.Frame(self.sidebar)
+        self.service_container = ttk.Frame(self.sidebar)
+        self.parallel_container = ttk.Frame(self.sidebar)
 
-        # Add frames to notebook with icons (or text)
-        self.sidebar.add(self.toggle_tab, text="≡")  # Toggle tab
-        self.sidebar.add(self.control_tab, text="⚙️")  # Control icon
-        self.sidebar.add(self.service_tab, text="🔧")  # Service icon
-        self.sidebar.add(self.Parallel_server_tab, text="📊")  
-        
+        # Create content frames
+        self.control_content = ttk.Frame(self.control_container)
+        self.service_content = ttk.Frame(self.service_container)
+        self.parallel_content = ttk.Frame(self.parallel_container)
+
+        # Add container frames to notebook with icons
+        self.sidebar.add(self.control_container, text="⚙️")
+        self.sidebar.add(self.service_container, text="🔧")
+        self.sidebar.add(self.parallel_container, text="📊")
+
         # Set up tooltip texts for the tabs
-        self.create_tooltip(self.control_tab, "Controls")
-        self.create_tooltip(self.service_tab, "Services")
-        self.create_tooltip(self.toggle_tab, "Toggle Control Panel")  # Tooltip for toggle tab
-        self.create_tooltip(self.Parallel_server_tab, "Parallel Server Data")
+        self.create_tooltip(self.control_container, "Controls")
+        self.create_tooltip(self.service_container, "Services")
+        self.create_tooltip(self.parallel_container, "Parallel Server Data")
 
-        # Bind the toggle tab to the toggle function
-        self.sidebar.bind("<<NotebookTabChanged>>", self.on_tab_change)
-
-        # Create the control and service frames in their respective tabs
-        self.create_control_frame(self.control_tab)
-        self.create_service_form(self.service_tab)
-        self.create_Parallel_simulation_form(self.Parallel_server_tab)
-
-        # Right side content
-        self.content_frame = ttk.Frame(self.main_container, style="TFrame")
+        # Create the right panel and other components
+        self.content_frame = ttk.Frame(self.main_container)
         self.content_frame.pack(side="right", fill="both", expand=True)
 
-        # Create the right panel
         self.right_panel = ttk.Frame(self.content_frame)
         self.right_panel.pack(side="right", fill="both", expand=True)
 
-        # Create separate frames for the two tables
-        self.customer_data_frame = ttk.Frame(self.right_panel, style="TFrame")
-        self.chronological_frame = ttk.Frame(self.right_panel, style="TFrame")
-
-        # Arrange frames within right_panel
-        self.customer_data_frame.pack(side="top", fill="both", expand=True, padx=5, pady=(0, 5))
-        self.chronological_frame.pack(side="bottom", fill="both", expand=True, padx=5, pady=5)
+        # Initialize tab contents
+        self.create_control_frame(self.control_content)
+        self.create_service_form(self.service_content)
+        self.create_Parallel_simulation_form(self.parallel_content)
 
         # Create data frames
         self.create_data_frames()
 
-    def on_tab_change(self, event) -> None:
-        """Handle tab selection to toggle the control panel when the toggle tab is clicked."""
-        # Get the selected tab index
-        selected_tab = event.widget.index("current")
+        # Bind the tab change event to our custom handler
+        self.sidebar.bind("<Button-1>", self.handle_tab_click, add="+")
 
-        # If the toggle tab (first tab) is selected, toggle the control panel
-        if selected_tab == 0:
-            self.toggle_control_panel()
-   
-    def toggle_control_panel(self) -> None:
-        """Toggle the visibility of the control panel and adjust the main frame."""
-        if self.control_panel_visible:
-            # Collapse the sidebar to only show icons
-            self.sidebar.pack_configure(fill="y", expand=False, side="left", padx=(0, 0))
-            self.sidebar.config(width=1)  # Reduce width to show icons only
+    def get_clicked_tab(self, event):
+        """Determine which tab was clicked based on click coordinates."""
+        try:
+            clicked_tab = self.sidebar.index(f"@{event.x},{event.y}")
+            tab_mapping = {
+                0: 'control',
+                1: 'service',
+                2: 'parallel'
+            }
+            return clicked_tab, tab_mapping.get(clicked_tab)
+        except tk.TclError:  # Click was not on a tab
+            return None, None
 
-            # Hide content inside each tab to show only icons
-            for child in (self.control_tab, self.service_tab):
-                for widget in child.winfo_children():
-                    widget.grid_remove()  # Hide widgets in each tab without removing the frame
+    def handle_tab_click(self, event):
+        """Handle tab clicks with toggle behavior."""
+        clicked_tab_index, tab_name = self.get_clicked_tab(event)
+        
+        if clicked_tab_index is None or tab_name is None:
+            return
+        
+        # Get the content frame for the clicked tab
+        content_frames = {
+            'control': self.control_content,
+            'service': self.service_content,
+            'parallel': self.parallel_content
+        }
+        content_frame = content_frames[tab_name]
 
-            # Expand the main content to use more space
-            self.content_frame.pack_configure(fill="both", expand=True, side="right")
-        else:
-            # Expand the sidebar to show full tab content
-            self.sidebar.pack_configure(fill="y", expand=False, side="left")
-            self.sidebar.config(width=250)  # Restore full width
+        # If clicking the currently open tab, close it
+        if self.current_tab == tab_name:
+            # Hide the content
+            content_frame.pack_forget()
+            # Reset the tab state
+            self.tab_states[tab_name] = False
+            self.current_tab = None
+            # Collapse the sidebar
+            self.sidebar.configure(width=1)
+            return
 
-            # Restore the widgets in each tab
-            for child in (self.control_tab, self.service_tab):
-                for widget in child.winfo_children():
-                    widget.grid()  # Show widgets again when expanded
+        # If a different tab was open, close it
+        if self.current_tab is not None:
+            old_content = content_frames[self.current_tab]
+            old_content.pack_forget()
+            self.tab_states[self.current_tab] = False
 
-        # Toggle the flag for control panel visibility
-        self.control_panel_visible = not self.control_panel_visible
+        # Open the clicked tab
+        content_frame.pack(fill="both", expand=True, padx=5, pady=5)
+        self.tab_states[tab_name] = True
+        self.current_tab = tab_name
+        self.sidebar.configure(width=300)  # Expand sidebar
 
-        # Update toggle button text based on visibility
-        self.sidebar.tab(0, text="≡" if self.control_panel_visible else "☰")
- 
+    def show_tab_contents(self, tab_name):
+        """Show contents of a specific tab."""
+        content_frames = {
+            'control': self.control_content,
+            'service': self.service_content,
+            'parallel': self.parallel_content
+        }
+        content_frames[tab_name].pack(fill="both", expand=True, padx=5, pady=5)
+        self.sidebar.configure(width=300)
+
+    def hide_tab_contents(self, tab_name):
+        """Hide contents of a specific tab."""
+        content_frames = {
+            'control': self.control_content,
+            'service': self.service_content,
+            'parallel': self.parallel_content
+        }
+        content_frames[tab_name].pack_forget()
+
     def apply_theme(self) -> None:
         """Apply the current theme to all components."""
         theme = ThemeManager.get_theme(self.is_dark_mode)
@@ -654,74 +688,51 @@ class QueuingSystemGUI:
             messagebox.showerror("Error", str(e))
 
     def generate_customers(self) -> None:
-        """Generate random customer data without probability columns, ensuring no service overlap."""
+        """Generate random customer data without service overlap tracking."""
+        # Basic validation
         if not self.services:
             messagebox.showerror("Error", "No services available! Please add services first.")
             return
 
         try:
             self.show_probability_columns = False  # Ensure no probability columns for normal simulation
+            
+            # Generate customers
             num_customers = random.randint(5, 10)
             arrival_time = 0
             new_data = []
-            service_end_times = {}  # Track when each service becomes available
 
             for customer_id in range(1, num_customers + 1):
+                # Calculate arrival and service times
                 interval = random.randint(1, 3)
-                initial_arrival_time = arrival_time + interval
+                arrival_time += interval
                 
+                # Select random service
                 service_code = random.choice(list(self.services.keys()))
                 service_info = self.services[service_code]
                 service_duration = service_info['duration']
-
-                # Check if the service is currently in use
-                if service_code in service_end_times:
-                    # If service is busy, adjust arrival time to when service becomes available
-                    arrival_time = max(initial_arrival_time, service_end_times[service_code])
-                else:
-                    arrival_time = initial_arrival_time
-
                 departure_time = arrival_time + service_duration
                 
-                # Update the service end time
-                service_end_times[service_code] = departure_time
+                # Generate arrival and departure events
+                for event_type in ['Arrival', 'Departure']:
+                    event_time = arrival_time if event_type == 'Arrival' else departure_time
+                    new_data.append({
+                        'Customer ID': customer_id,
+                        'Event Type': event_type,
+                        'Clock Time': event_time,
+                        'Service Code': service_code,
+                        'Service Title': service_info['title'],
+                        'Service Duration': service_duration,
+                        'End Time': departure_time
+                    })
 
-                # Add arrival and departure events
-                new_data.append({
-                    'Customer ID': customer_id,
-                    'Event Type': 'Arrival',
-                    'Clock Time': arrival_time,
-                    'Service Code': service_code,
-                    'Service Title': service_info['title'],
-                    'Service Duration': service_duration,
-                    'End Time': departure_time
-                })
-                new_data.append({
-                    'Customer ID': customer_id,
-                    'Event Type': 'Departure',
-                    'Clock Time': departure_time,
-                    'Service Code': service_code,
-                    'Service Title': service_info['title'],
-                    'Service Duration': service_duration,
-                    'End Time': departure_time
-                })
-
-            # Sort the data by clock time to ensure proper chronological order
-            new_data.sort(key=lambda x: x['Clock Time'])
-            
             # Update the DataFrame
             self.current_data = pd.DataFrame(new_data)
-            
-            # Hide logo screen if visible
-            if hasattr(self, 'logo_frame') and self.logo_frame.winfo_ismapped():
-                self.logo_frame.pack_forget()
-                
-            # Show data frames
+
             self.show_data_frames()
-            
-            # Update displays
             self.update_displays()
-            messagebox.showinfo("Simulation Complete", "Regular simulation completed successfully!")
+            
+            messagebox.showinfo("Simulation Complete", "Simulation completed successfully!")
 
         except Exception as e:
             messagebox.showerror("Error", f"Failed to generate customers: {str(e)}")

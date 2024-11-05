@@ -1,0 +1,5 @@
+Time Between Arrivals,Probability,Cumulative Probability,Digit Assignment From,Digit Assignment To
+5,0.3,0.3,0,29
+10,0.4,0.7,30,69
+15,0.2,0.9,70,89
+20,0.1,1.0,90,99
