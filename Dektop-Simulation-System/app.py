@@ -688,7 +688,7 @@ class QueuingSystemGUI:
             messagebox.showerror("Error", str(e))
 
     def generate_customers(self) -> None:
-        """Generate random customer data without service overlap tracking."""
+        """Generate random customer data with proper service scheduling and waiting time tracking."""
         # Basic validation
         if not self.services:
             messagebox.showerror("Error", "No services available! Please add services first.")
@@ -699,40 +699,77 @@ class QueuingSystemGUI:
             
             # Generate customers
             num_customers = random.randint(5, 10)
-            arrival_time = 0
             new_data = []
-
+            
+            # Initialize tracking variables
+            current_system_time = 0  # Tracks when the server becomes available
+            
             for customer_id in range(1, num_customers + 1):
-                # Calculate arrival and service times
-                interval = random.randint(1, 3)
-                arrival_time += interval
+                # Generate arrival time
+                if customer_id == 1:
+                    arrival_time = 0
+                else:
+                    interval = random.randint(1, 3)
+                    arrival_time = last_arrival_time + interval
+                
+                last_arrival_time = arrival_time
                 
                 # Select random service
                 service_code = random.choice(list(self.services.keys()))
                 service_info = self.services[service_code]
                 service_duration = service_info['duration']
-                departure_time = arrival_time + service_duration
                 
-                # Generate arrival and departure events
-                for event_type in ['Arrival', 'Departure']:
-                    event_time = arrival_time if event_type == 'Arrival' else departure_time
-                    new_data.append({
-                        'Customer ID': customer_id,
-                        'Event Type': event_type,
-                        'Clock Time': event_time,
-                        'Service Code': service_code,
-                        'Service Title': service_info['title'],
-                        'Service Duration': service_duration,
-                        'End Time': departure_time
-                    })
+                # Calculate service start time and waiting time
+                service_start_time = max(arrival_time, current_system_time)
+                waiting_time = service_start_time - arrival_time
+                departure_time = service_start_time + service_duration
+                
+                # Update system time for next customer
+                current_system_time = departure_time
+                
+                # Generate arrival event
+                new_data.append({
+                    'Customer ID': customer_id,
+                    'Event Type': 'Arrival',
+                    'Clock Time': arrival_time,
+                    'Service Code': service_code,
+                    'Service Title': service_info['title'],
+                    'Service Duration': service_duration,
+                    'Service Start': service_start_time,
+                    'End Time': departure_time,
+                    'Waiting Time': waiting_time
+                })
+                
+                # Generate departure event
+                new_data.append({
+                    'Customer ID': customer_id,
+                    'Event Type': 'Departure',
+                    'Clock Time': departure_time,
+                    'Service Code': service_code,
+                    'Service Title': service_info['title'],
+                    'Service Duration': service_duration,
+                    'Service Start': service_start_time,
+                    'End Time': departure_time,
+                    'Waiting Time': waiting_time
+                })
 
             # Update the DataFrame
             self.current_data = pd.DataFrame(new_data)
+            
+            # Calculate and store queue statistics
+            self.queue_stats = {
+                'avg_waiting_time': self.current_data['Waiting Time'].mean(),
+                'max_waiting_time': self.current_data['Waiting Time'].max(),
+                'total_customers': num_customers
+            }
 
             self.show_data_frames()
             self.update_displays()
             
-            messagebox.showinfo("Simulation Complete", "Simulation completed successfully!")
+            messagebox.showinfo("Simulation Complete", 
+                            f"Simulation completed successfully!\n"
+                            f"Average waiting time: {self.queue_stats['avg_waiting_time']:.2f} units\n"
+                            f"Maximum waiting time: {self.queue_stats['max_waiting_time']:.2f} units")
 
         except Exception as e:
             messagebox.showerror("Error", f"Failed to generate customers: {str(e)}")
@@ -1206,7 +1243,7 @@ class QueuingSystemGUI:
                 self.chrono_tree.insert("", "end", values=values)
 
     def update_graph_single_server(self) -> None:
-        """Update the system state graph with theme support."""
+        """Update the system state graph with clear waiting time visualization."""
         try:
             # Clear the current plot
             self.ax.clear()
@@ -1217,36 +1254,53 @@ class QueuingSystemGUI:
             self.ax.set_facecolor(theme['graph_bg'])
             
             if not self.current_data.empty:
-                try:
-                    # Sort data by 'Clock Time' for ordered plotting
-                    sorted_data = self.current_data.sort_values('Clock Time')
-
-                    # Plot each client's arrival time and service duration
-                    for index, row in sorted_data.iterrows():
-                        arrival_time = row['Clock Time']
-                        service_duration = row['Service Duration']
-                        end_time = row['End Time']
-                        client_id = row['Customer ID']
-                        
-                        # Plot arrival time
-                        self.ax.plot(arrival_time, client_id, 'bo', label="Arrival Time" if index == 0 else "")
-                        
-                        # Plot service duration as a horizontal line
-                        self.ax.hlines(client_id, arrival_time, end_time, colors='green', label="Service Duration" if index == 0 else "")
-                        
-                        # Plot end time
-                        self.ax.plot(end_time, client_id, 'yo', label="End Time" if index == 0 else "")
-                        
-                        # Calculate and plot waiting time if applicable
-                        if row['Event Type'] == 'Arrival' and row['Clock Time'] < end_time:
-                            waiting_time = end_time - arrival_time
-                            self.ax.plot([arrival_time, end_time], [client_id, client_id], 'y--', alpha=0.5, label="Waiting Time" if index == 0 else "")
-
-                    # Configure graph
-                    self._configure_graph()
+                # Get unique customers and sort by arrival time
+                customers = self.current_data.drop_duplicates(subset=['Customer ID', 'Event Type'])
+                customers = customers[customers['Event Type'] == 'Arrival'].sort_values('Clock Time')
+                
+                for _, row in customers.iterrows():
+                    customer_id = row['Customer ID']
+                    arrival_time = row['Clock Time']
+                    service_start = row['Service Start']
+                    end_time = row['End Time']
                     
-                except Exception as e:
-                    messagebox.showerror("Error", f"Failed to update graph: {str(e)}")
+                    # Plot arrival point
+                    self.ax.plot(arrival_time, customer_id, 'bo', markersize=8, label="Arrival Time" if customer_id == 1 else "")
+                    
+                    # Plot service duration (green line)
+                    self.ax.hlines(customer_id, service_start, end_time, colors='green', linewidth=2,
+                                label="Service Duration" if customer_id == 1 else "")
+                    
+                    # Plot end point
+                    self.ax.plot(end_time, customer_id, 'yo', markersize=8, label="End Time" if customer_id == 1 else "")
+                    
+                    # Plot waiting time if there is any
+                    if service_start > arrival_time:
+                        # Red dashed line for waiting time
+                        self.ax.hlines(customer_id, arrival_time, service_start, colors='red', 
+                                    linestyles='--', linewidth=2, label="Waiting Time" if customer_id == 1 else "")
+                        
+                        # Add waiting time annotation
+                        waiting_time = service_start - arrival_time
+                        if waiting_time > 0:
+                            self.ax.text((arrival_time + service_start) / 2, customer_id + 0.1,
+                                    f'Wait: {waiting_time:.1f}', ha='center', va='bottom',
+                                    color='red', fontsize=8)
+
+                # Configure axes and labels
+                self.ax.set_xlabel('Time')
+                self.ax.set_ylabel('Client Number')
+                self.ax.set_title('Client Arrival and Service End Times')
+                
+                # Adjust y-axis to show all clients with some padding
+                self.ax.set_ylim(0.5, len(customers) + 0.5)
+                
+                # Add grid for better readability
+                self.ax.grid(True, linestyle='--', alpha=0.7)
+                
+                # Adjust legend
+                self.ax.legend(loc='upper left', bbox_to_anchor=(1.05, 1))
+                
             else:
                 self._show_empty_graph()
             
