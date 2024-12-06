@@ -5,7 +5,7 @@ const parallelServer = (() => {
             { selector: '#parallelUploadFileButton', event: 'click', handler: (e) => handleFileUpload(e) },
             { selector: '#parallelDownloadDataButton', event: 'click', handler: downloadDataAsFile },
             { selector: '#parallelClearDataButton', event: 'click', handler: () => $('#clearDataModal').modal('show') },
-            { selector: '#ConfirmClearDataButton', event: 'click', handler: () => clearDataAjax(clearData) },
+            { selector: '#ConfirmClearDataButton', event: 'click', handler: () => clearDataAjax(clearData, '/clear_data_parallel') },
             { selector: '#addArrivalButton', event: 'click', handler: (e) => addArrival(e) },
             { selector: '#addServerButton', event: 'click', handler: (e) => addServer(e) },
             { selector: '#parallelSimulateButton', event: 'click', handler: (e) => simulateServersWithSpinner(e) }

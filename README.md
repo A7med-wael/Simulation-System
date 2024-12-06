@@ -138,9 +138,22 @@ Simulation-System/
 │     │             ├── serviceItemTemplate.html  # Template for rendering service items.
 │     │             └── flash-messages.html       # Template for displaying flash messages.
 │     │
-│     ├── templates/              # Contains main application templates.
-│     │     └── index.html        # Main HTML template for the application.
-│     │
+│     ├── templates/
+│     │     ├── layout.html                 # Base layout template for the app.
+│     │     ├── partials/
+│     │     │   ├── header.html             # Header with metadata, and stylesheets.
+│     │     │   ├── navbar.html             # Navigation bar (Sidebar).
+│     │     │   ├── footer.html             # Footer with scripts.
+│     │     │   ├── content.html            # Main content area to be extended in each page.
+│     │     │   ├── flash-messages.html     # Flash Messages container
+│     │     │   └── modals.html             # Any modals used across the application.
+│     │     │
+│     │     ├──servers/
+│     │     │   ├── single_server.html      # Content of single server tab.
+│     │     │   └── parallel_server.html    # Content of parallel server tab.
+│     │     │
+│     │     └── index.html                  # Main page that extends layout.html.
+│     │     
 │     └── app.py                  # Main application code and entry point for the web application.
 │
 ├── .gitignore                    # Git ignore file to exclude files from version control.

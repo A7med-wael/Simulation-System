@@ -5,7 +5,7 @@ const singleServer = (() => {
             { selector: '#uploadFileButton', event: 'click', handler: (e) => handleFileUpload(e) },
             { selector: '#downloadDataButton', event: 'click', handler: downloadDataAsFile },
             { selector: '#clearDataButton', event: 'click', handler: () => $('#clearDataModal').modal('show') },
-            { selector: '#confirmClearDataButton', event: 'click', handler: () => clearDataAjax(clearData) },
+            { selector: '#confirmClearDataButton', event: 'click', handler: () => clearDataAjax(clearData, '/clear_data_a') },
             { selector: '#addServiceButton', event: 'click', handler: (e) => addService(e)},
             { selector: '#simulateButton', event: 'click', handler: (e) => simulateCustomersWithSpinner(e) }
         ]);
@@ -137,7 +137,8 @@ const singleServer = (() => {
     function handleDownloadDataSuccess(response) {
         if (response.success) {
             const link = document.createElement('a');
-            link.href = response.file_url;
+            const {file_url} = response
+            link.href = file_url;
             link.download = 'queue_data.xlsx';
             document.body.appendChild(link);
             link.click();
@@ -174,10 +175,11 @@ const singleServer = (() => {
     }
 
     function handleAddServiceSuccess(response) {
-        let item = Templates.serverRow
-            .replace('{{code}}', response.service_code)
-            .replace('{{title}}', response.service_title)
-            .replace('{{duration}}', response.service_duration);
+        const { service_code, service_title, service_duration } = response
+        let item = Templates.serviceItem
+            .replace('{{code}}', service_code)
+            .replace('{{title}}', service_title)
+            .replace('{{duration}}', service_duration);
         $('.service-list ul').append(item);
 
         $('#addServiceForm')[0].reset();

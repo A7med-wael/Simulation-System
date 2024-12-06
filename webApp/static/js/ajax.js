@@ -20,9 +20,9 @@ function ajaxRequest({url, type = 'POST', processData = true,
     });
 }
 
-function clearDataAjax(clearDataFunction) {
+function clearDataAjax(clearDataFunction, url) {
     return $.ajax({
-        url: '/clear_data',
+        url: url,
         type: 'GET',
         success: function () { clearDataFunction(); $('#clearDataModal').modal('hide'); },
         error: handleAjaxError('clearing data')
