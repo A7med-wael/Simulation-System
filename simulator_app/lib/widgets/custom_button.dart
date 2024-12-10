@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-
-import '../constents.dart';
+import 'package:simulator_app/constents.dart';
 
 class CustomButton extends StatelessWidget {
   const CustomButton({super.key, required this.onPressed, required this.text});
@@ -12,9 +11,9 @@ class CustomButton extends StatelessWidget {
     return ElevatedButton(
       style: const ButtonStyle(
         fixedSize: WidgetStatePropertyAll(
-          Size(160, 40),
+          const Size(160, 40),
         ),
-        backgroundColor: WidgetStatePropertyAll(
+        backgroundColor: MaterialStatePropertyAll(
           PrimaryColor,
         ),
       ),

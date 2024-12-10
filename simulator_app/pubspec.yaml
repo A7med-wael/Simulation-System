@@ -28,15 +28,16 @@ environment:
 # the latest version available on pub.dev. To see which dependencies have newer
 # versions available, run `flutter pub outdated`.
 dependencies:
-  cupertino_icons: ^1.0.6
+  cupertino_icons: ^1.0.8
+  file_picker: ^5.2.2
+  excel: ^2.0.7       # For reading/writing Excel files
+  fl_chart: ^0.60.0   # For plotting graphs
+  path_provider: ^2.0.11 # For saving files locally on the device
+  csv: ^5.0.1
   flutter:
     sdk: flutter
 
 dev_dependencies:
-  excel: ^4.0.6
-  file_picker: ^8.1.3
-  fl_chart: ^0.69.0
-  flutter_lints: ^3.0.0
   flutter_test:
     sdk: flutter
 

@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
-
-import 'pages/home_page.dart';
+import 'package:simulator_app/pages/home_page.dart';
 
 void main() {
   runApp(
-    const SimulationClockTable(),
+    SimulationClockTable(),
   );
 }
 
@@ -19,15 +18,3 @@ class SimulationClockTable extends StatelessWidget {
     );
   }
 }
-//      push
-// git add .
-// git commit -m "commit message"
-// git push
-
-
-
-
-
-
-// git fetch
-// git merge flutterApp

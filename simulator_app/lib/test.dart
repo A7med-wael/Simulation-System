@@ -1,4 +1,436 @@
+ // Widget _buildActionButtons() {
+  //   return Column(
+  //     children: [
+  //       CustomButton(onPressed: initializeData, text: 'Upload File'),
+  // CustomButton(
+  //     onPressed: () {
+  //       setState(() {
+  //         showProbabilityColumns = false;
+  //         generateCustomers(
+  //         services: services,
+  //         currentData: currentData,
+  //         context: context,
+  //         updateDisplays: updateDisplays,
+  //       );
+  //       });
+  //     },
+  //     text: 'Simulate'),
+  // CustomButton(
+  //     onPressed: () {
+  //       setState(() {
+  //         showProbabilityColumns = true;
+  //         probabilitySimulation();
+  //       });
+  //     },
+  //     text: 'Probability'),
+  //     ],
+  //   );
+  // }
+
+  // Widget _buildServiceForm() {
+  //   return Container(
+  //     padding: const EdgeInsets.all(10),
+  //     decoration: BoxDecoration(
+  //       borderRadius: BorderRadius.circular(10),
+  //     ),
+  //     child: Column(
+  //       crossAxisAlignment: CrossAxisAlignment.start,
+  //       children: [
+  //         const Center(
+  //           child:  Text('Add New Service',
+  //               style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+  //         ),
+  //         const SizedBox(height: 10),
+  //         _buildTextInputField(
+  //             controller: serviceCodeController, labelText: 'Service Code:'),
+  //         _buildTextInputField(
+  //             controller: serviceTitleController, labelText: 'Service Title:'),
+  //         _buildTextInputField(
+  //             controller: serviceDurationController,
+  //             labelText: 'Duration (min):',
+  //             keyboardType: TextInputType.number),
+  //         const SizedBox(height: 10),
+  //         Center(
+  //           child: CustomButton(
+  //             onPressed: _addService,
+  //             text: 'Add Service',
+  //           ),
+  //         ),
+  //       ],
+  //     ),
+  //   );
+  // }
+
+  // Widget _buildTextInputField({
+  //   required TextEditingController controller,
+  //   required String labelText,
+  //   TextInputType keyboardType = TextInputType.text,
+  // }) {
+  //   return Padding(
+  //     padding: const EdgeInsets.only(bottom: 10),
+  //     child: TextFormField(
+  //       controller: controller,
+  //       decoration: InputDecoration(
+  //         labelText: labelText,
+  //         border: const OutlineInputBorder(),
+  //       ),
+  //       keyboardType: keyboardType,
+  //     ),
+  //   );
+  // }
+
+  // Future<void> initializeData() async {
+  //   FilePickerResult? result = await FilePicker.platform.pickFiles(
+  //     type: FileType.custom,
+  //     allowedExtensions: ['xlsx', 'xls'],
+  //   );
+  //   if (result != null && result.files.isNotEmpty) {
+  //     String? filePath = result.files.single.path;
+  //     var file = File(filePath!);
+  //     try {
+  //       var bytes = file.readAsBytesSync();
+  //       var excel = Excel.decodeBytes(bytes);
+  //       for (var table in excel.tables.keys) {
+  //         for (var row in excel.tables[table]!.rows) {
+  //           if (row.isNotEmpty) {
+  //             var serviceCode = row[0]?.value;
+  //             var serviceTitle = row[1]?.value;
+  //             var serviceDuration = row[2]?.value;
+  //             if (serviceCode != null &&
+  //                 serviceTitle != null &&
+  //                 serviceDuration != null) {
+  //               services[serviceCode.toString()] = {
+  //                 'serviceCode': serviceCode.toString(),
+  //                 'serviceTitle': serviceTitle.toString(),
+  //                 'serviceDuration': serviceDuration.toString(),
+  //               };
+  //             }
+  //           }
+  //         }
+  //       }
+  //       showDialog(
+  //         context: context,
+  //         builder: (context) => AlertDialog(
+  //           title: const Text('File Loaded'),
+  //           content: const Text('File loaded successfully.'),
+  //           actions: [
+  //             TextButton(
+  //               onPressed: () => Navigator.of(context).pop(),
+  //               child: const Text('OK'),
+  //             ),
+  //           ],
+  //         ),
+  //       );
+  //       print("Services Loaded: $services");
+  //       setState(() {
+  //         updateDisplays();
+  //       });
+  //     } catch (e) {
+  //       print('Error while processing Excel file: $e');
+  //     }
+  //   } else {
+  //     print('No file selected');
+  //   }
+  // }
+
+  // Widget buildCustomerDataTable() {
+  //   return Column(
+  //     children: [
+  //       const Text(
+  //         'Customer Data Table',
+  //         style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+  //       ),
+  //       SingleChildScrollView(
+  //         scrollDirection: Axis.horizontal,
+  //         child: DataTable(
+  //           columns: [
+  //             const DataColumn(label: Text('Customer ID')),
+  //             const DataColumn(label: Text('Event Type')),
+  //             const DataColumn(label: Text('Clock Time')),
+  //             const DataColumn(label: Text('Service Code')),
+  //             const DataColumn(label: Text('Service Title')),
+  //             const DataColumn(label: Text('Service Duration')),
+  //             const DataColumn(label: Text('End Time')),
+  //             if (showProbabilityColumns)
+  //               const DataColumn(label: Text('Arrival Probability')),
+  //             if (showProbabilityColumns)
+  //               const DataColumn(label: Text('Completion Probability')),
+  //           ],
+  //           rows: newData.map((data) => _buildDataRow(data)).toList(),
+  //         ),
+  //       ),
+  //     ],
+  //   );
+  // }
+  // DataRow _buildDataRow(Map<String, dynamic> data) {
+  //   return DataRow(cells: [
+  //     DataCell(Text(data['Customer ID'].toString())),
+  //     DataCell(Text(data['Event Type'].toString())),
+  //     DataCell(Text(data['Clock Time'].toString())),
+  //     DataCell(Text(data['Service Code'].toString())),
+  //     DataCell(Text(data['Service Title'].toString())),
+  //     DataCell(Text(data['Service Duration'].toString())),
+  //     DataCell(Text(data['End Time'].toString())),
+  //     if (showProbabilityColumns)
+  //       DataCell(Text(data['Arrival Probability'].toString())),
+  //     if (showProbabilityColumns)
+  //       DataCell(Text(data['Completion Probability'].toString())),
+  //   ]);
+  // }
+
+  // Widget buildChronologicalEventsTable() {
+  //   return Padding(
+  //     padding: const EdgeInsets.all(10.0),
+  //     child: Column(
+  //       children: [
+  //         const Text(
+  //           'Chronological Order of Events',
+  //           style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+  //         ),
+  //         SingleChildScrollView(
+  //           scrollDirection: Axis.horizontal,
+  //           child: DataTable(
+  //             columns: [
+  //               const DataColumn(label: Text('ID')),
+  //               const DataColumn(label: Text('Time')),
+  //               const DataColumn(label: Text('Event Type')),
+  //               const DataColumn(label: Text('Details')),
+  //               if (showProbabilityColumns)
+  //                 const DataColumn(label: Text('Arrival Probability')),
+  //               if (showProbabilityColumns)
+  //                 const DataColumn(label: Text('Completion Probability')),
+  //             ],
+  //             rows: currentData
+  //                 .map((event) => DataRow(cells: [
+  //                       DataCell(Text(event.customerId)),
+  //                       DataCell(Text(event.clockTime)),
+  //                       DataCell(Text(event.eventType)),
+  //                       DataCell(Text(event.serviceTitle)),
+  //                       if (showProbabilityColumns)
+  //                         DataCell(Text(event.arrivalProb)),
+  //                       if (showProbabilityColumns)
+  //                         DataCell(Text(event.completionProb)),
+  //                     ]))
+  //                 .toList(),
+  //           ),
+  //         ),
+  //       ],
+  //     ),
+  //   );
+  // }
+ 
+ // void generateCustomers() {
+  //   if (services.isEmpty) {
+  //     showDialog(
+  //       context: context,
+  //       builder: (context) => AlertDialog(
+  //         title: const Text('Error'),
+  //         content: const Text(
+  //             'No services available! Please add services first or upload an Excel file.'),
+  //         actions: [
+  //           TextButton(
+  //             onPressed: () => Navigator.of(context).pop(),
+  //             child: const Text('OK'),
+  //           ),
+  //         ],
+  //       ),
+  //     );
+  //     return;
+  //   }
+  //   List<CustomerEvent> tempEvents = [];
+  //   Map<String, dynamic> endtime = {};
+  //   try {
+  //     int customerCount = Random().nextInt(6) + 5;
+  //     int arrivalTime = 0;
+  //     for (int i = 1; i <= customerCount; i++) {
+  //       int interval = Random().nextInt(3) + 0;
+  //       arrivalTime += interval;
+  //       var randomServiceKey =
+  //           services.keys.elementAt(Random().nextInt(services.length));
+  //       var selectedService = services[randomServiceKey]!;
+  //       // int serviceDuration = int.parse(selectedService['serviceDuration']);
+  //       String durationStr = selectedService['serviceDuration'].trim();
+  //       int serviceDuration = int.tryParse(durationStr) ?? 0;
+  //       if (endtime.containsKey(randomServiceKey)) {
+  //         arrivalTime = max(endtime[randomServiceKey]!, arrivalTime);
+  //       } else {
+  //         arrivalTime = arrivalTime;
+  //       }
+  //       int departureTime = arrivalTime + serviceDuration;
+  //       endtime[randomServiceKey] = departureTime;
+  //       tempEvents.add(CustomerEvent(
+  //         customerId: i.toString(),
+  //         eventType: "Arrival",
+  //         clockTime: arrivalTime.toString(),
+  //         serviceCode: selectedService['serviceCode'],
+  //         serviceTitle: selectedService['serviceTitle'],
+  //         serviceDuration: serviceDuration.toString(),
+  //         endTime: departureTime.toString(),
+  //       ));
+  //       tempEvents.add(CustomerEvent(
+  //         customerId: i.toString(),
+  //         eventType: "Departure",
+  //         clockTime: departureTime.toString(),
+  //         serviceCode: selectedService['serviceCode'],
+  //         serviceTitle: selectedService['serviceTitle'],
+  //         serviceDuration: serviceDuration.toString(),
+  //         endTime: departureTime.toString(),
+  //       ));
+  //     }
+  //     tempEvents.sort((a, b) {
+  //       return int.parse(a.clockTime).compareTo(int.parse(b.clockTime));
+  //     });
+  //     currentData.clear();
+  //     currentData.addAll(tempEvents);
+  //     setState(() {
+  //       updateDisplays();
+  //     });
+  //     showDialog(
+  //       context: context,
+  //       builder: (context) => AlertDialog(
+  //         title: const Text('Simulation Complete'),
+  //         content: const Text('Simulation process completed successfully!'),
+  //         actions: [
+  //           TextButton(
+  //             onPressed: () => Navigator.of(context).pop(),
+  //             child: const Text('OK'),
+  //           ),
+  //         ],
+  //       ),
+  //     );
+  //   } catch (e) {
+  //     showDialog(
+  //       context: context,
+  //       builder: (context) => AlertDialog(
+  //         title: const Text('Error'),
+  //         content: Text('Failed to generate customers: $e'),
+  //         actions: [
+  //           TextButton(
+  //             onPressed: () => Navigator.of(context).pop(),
+  //             child: const Text('OK'),
+  //           ),
+  //         ],
+  //       ),
+  //     );
+  //   }
+  // }
+
+//   void generateCustomersWithTwoServers() {
+//   if (services.isEmpty) {
+//     showDialog(
+//       context: context,
+//       builder: (context) => AlertDialog(
+//         title: const Text('Error'),
+//         content: const Text(
+//             'No services available! Please add services first or upload an Excel file.'),
+//         actions: [
+//           TextButton(
+//             onPressed: () => Navigator.of(context).pop(),
+//             child: const Text('OK'),
+//           ),
+//         ],
+//       ),
+//     );
+//     return;
+//   }
+//   List<CustomerEvent> tempEvents = [];
+//   Map<String, int> endtimeServer1 = {};
+//   Map<String, int> endtimeServer2 = {};
+//   try {
+//     int customerCount = Random().nextInt(6) + 5;
+//     int arrivalTime = 0;
+//     for (int i = 1; i <= customerCount; i++) {
+//       int interval = Random().nextInt(3) + 0;
+//       arrivalTime += interval;
+//       var randomServiceKey =
+//           services.keys.elementAt(Random().nextInt(services.length));
+//       var selectedService = services[randomServiceKey]!;
+//       String durationStr = selectedService['serviceDuration'].trim();
+//       int serviceDuration = int.tryParse(durationStr) ?? 0;
+//       bool assignToServer1 = true;
+//       if (endtimeServer1.containsKey(randomServiceKey) &&
+//           endtimeServer2.containsKey(randomServiceKey)) {
+//         if (endtimeServer1[randomServiceKey]! <= endtimeServer2[randomServiceKey]!) {
+//           arrivalTime = max(endtimeServer1[randomServiceKey]!, arrivalTime);
+//           assignToServer1 = true;
+//         } else {
+//           arrivalTime = max(endtimeServer2[randomServiceKey]!, arrivalTime);
+//           assignToServer1 = false;
+//         }
+//       } else if (endtimeServer1.containsKey(randomServiceKey)) {
+//         arrivalTime = max(endtimeServer1[randomServiceKey]!, arrivalTime);
+//         assignToServer1 = true;
+//       } else if (endtimeServer2.containsKey(randomServiceKey)) {
+//         arrivalTime = max(endtimeServer2[randomServiceKey]!, arrivalTime);
+//         assignToServer1 = false;
+//       }
+//       int departureTime = arrivalTime + serviceDuration;
+//       if (assignToServer1) {
+//         endtimeServer1[randomServiceKey] = departureTime;
+//       } else {
+//         endtimeServer2[randomServiceKey] = departureTime;
+//       }
+//       tempEvents.add(CustomerEvent(
+//         customerId: i.toString(),
+//         eventType: "Arrival",
+//         clockTime: arrivalTime.toString(),
+//         serviceCode: selectedService['serviceCode'],
+//         serviceTitle: selectedService['serviceTitle'],
+//         serviceDuration: serviceDuration.toString(),
+//         endTime: departureTime.toString(),
+//         serverId: assignToServer1 ? "Server 1" : "Server 2",
+//       ));
+//       tempEvents.add(CustomerEvent(
+//         customerId: i.toString(),
+//         eventType: "Departure",
+//         clockTime: departureTime.toString(),
+//         serviceCode: selectedService['serviceCode'],
+//         serviceTitle: selectedService['serviceTitle'],
+//         serviceDuration: serviceDuration.toString(),
+//         endTime: departureTime.toString(),
+//         serverId: assignToServer1 ? "Server 1" : "Server 2",
+//       ));
+//     }
+//     tempEvents.sort((a, b) {
+//       return int.parse(a.clockTime).compareTo(int.parse(b.clockTime));
+//     });
+//     currentData.clear();
+//     currentData.addAll(tempEvents);
+//     setState(() {
+//       updateDisplays();
+//     });
+//     showDialog(
+//       context: context,
+//       builder: (context) => AlertDialog(
+//         title: const Text('Simulation Complete'),
+//         content: const Text('Simulation process completed successfully!'),
+//         actions: [
+//           TextButton(
+//             onPressed: () => Navigator.of(context).pop(),
+//             child: const Text('OK'),
+//           ),
+//         ],
+//       ),
+//     );
+//   } catch (e) {
+//     showDialog(
+//       context: context,
+//       builder: (context) => AlertDialog(
+//         title: const Text('Error'),
+//         content: Text('Failed to generate customers: $e'),
+//         actions: [
+//           TextButton(
+//             onPressed: () => Navigator.of(context).pop(),
+//             child: const Text('OK'),
+//           ),
+//         ],
+//       ),
+//     );
+//   }
+// }
+
 // void probabilitySimulation() {
+  //   showProbabilityColumns = true;
   //   if (services.isEmpty) {
   //     showDialog(
   //       context: context,
@@ -16,32 +448,22 @@
   //     );
   //     return;
   //   }
-
   //   try {
-  //     double arrivalProbability =
-  //         0.6; // 60% chance of customer arrival per time unit
-  //     double serviceCompletionProbability = 0.8;
+  //     double arrivalProbability = 0.6;
   //     int maxCustomers = 20;
   //     List<CustomerEvent> simulatedData = [];
-  //     // List<Map<String, dynamic>> simulatedData = [];
   //     int arrivalTime = 0;
-
   //     for (int customerId = 1; customerId <= maxCustomers; customerId++) {
   //       if (Random().nextDouble() <= arrivalProbability) {
-  //         arrivalTime += Random().nextInt(3) +
-  //             1; // Random interval between 1 and 3 minutes
-
+  //         arrivalTime += Random().nextInt(3) + 1;
   //         var randomServiceKey =
   //             services.keys.elementAt(Random().nextInt(services.length));
   //         var serviceInfo = services[randomServiceKey]!;
   //         int serviceDuration =
   //             int.tryParse(serviceInfo['serviceDuration']) ?? 0;
   //         int departureTime = arrivalTime + serviceDuration;
-
-  //         // Probability-based columns
   //         double arrivalProb = Random().nextDouble();
-  //         double completionProb = serviceCompletionProbability;
-
+  //         double completionProb = Random().nextDouble();
   //         simulatedData.add(
   //           CustomerEvent(
   //             customerId: customerId.toString(),
@@ -69,20 +491,35 @@
   //           ),
   //         );
   //       }
-
-  //       // currentData = simulatedData.cast<CustomerEvent>();
-
+  //     }
+  //     simulatedData.sort((a, b) {
+  //       return int.parse(a.clockTime).compareTo(int.parse(b.clockTime));
+  //     });
+  //     if (simulatedData.isNotEmpty) {
   //       setState(() {
   //         currentData = simulatedData;
   //         updateDisplays();
   //       });
-
   //       showDialog(
   //         context: context,
   //         builder: (context) => AlertDialog(
   //           title: const Text('Probability Simulation Complete'),
   //           content: const Text(
   //               'Probability-based simulation completed successfully!'),
+  //           actions: [
+  //             TextButton(
+  //               onPressed: () => Navigator.of(context).pop(),
+  //               child: const Text('OK'),
+  //             ),
+  //           ],
+  //         ),
+  //       );
+  //     } else {
+  //       showDialog(
+  //         context: context,
+  //         builder: (context) => AlertDialog(
+  //           title: const Text('No Data'),
+  //           content: const Text('No events were generated in this simulation.'),
   //           actions: [
   //             TextButton(
   //               onPressed: () => Navigator.of(context).pop(),
@@ -109,545 +546,242 @@
   //   }
   // }
 
+  // void saveAllData() async {
+  //   if (currentData.isEmpty) {
+  //     showDialog(
+  //       context: context,
+  //       builder: (context) => AlertDialog(
+  //         title: const Text("Warning"),
+  //         content: const Text("No data to save!"),
+  //         actions: [
+  //           TextButton(
+  //             onPressed: () => Navigator.of(context).pop(),
+  //             child: const Text("OK"),
+  //           ),
+  //         ],
+  //       ),
+  //     );
+  //     return;
+  //   }
+  //   try {
+  //     String? filePath = await FilePicker.platform.saveFile(
+  //       dialogTitle: 'Save Excel File',
+  //       fileName: 'simulation_data.xlsx',
+  //     );
+  //     if (filePath != null) {
+  //       var excel = Excel.createExcel();
+  //       Sheet sheet = excel['Sheet1'];
+  //       sheet.appendRow([
+  //         'Customer ID',
+  //         'Event Type',
+  //         'Clock Time',
+  //         'Service Code',
+  //         'Service Title',
+  //         'Service Duration',
+  //         'End Time'
+  //       ]);
+  //       for (var event in currentData) {
+  //         sheet.appendRow([
+  //           event.customerId,
+  //           event.eventType,
+  //           event.clockTime,
+  //           event.serviceCode,
+  //           event.serviceTitle,
+  //           event.serviceDuration,
+  //           event.endTime,
+  //         ]);
+  //       }
+  //       List<int> bytes = excel.encode() ?? [];
+  //       File(filePath).writeAsBytesSync(bytes);
+  //       showDialog(
+  //         context: context,
+  //         builder: (context) => AlertDialog(
+  //           title: const Text("Success"),
+  //           content: const Text("Data saved successfully!"),
+  //           actions: [
+  //             TextButton(
+  //               onPressed: () => Navigator.of(context).pop(),
+  //               child: const Text("OK"),
+  //             ),
+  //           ],
+  //         ),
+  //       );
+  //     }
+  //   } catch (e) {
+  //     showDialog(
+  //       context: context,
+  //       builder: (context) => AlertDialog(
+  //         title: const Text("Error"),
+  //         content: Text("Failed to save data: ${e.toString()}"),
+  //         actions: [
+  //           TextButton(
+  //             onPressed: () => Navigator.of(context).pop(),
+  //             child: const Text("OK"),
+  //           ),
+  //         ],
+  //       ),
+  //     );
+  //   }
+  // }
 
-// import 'dart:math';
-// import 'dart:io';
-// import 'package:excel/excel.dart';
-// import 'package:fl_chart/fl_chart.dart';
-// import 'package:flutter/material.dart';
-// import 'package:file_picker/file_picker.dart';
-
-// class HomePage extends StatefulWidget {
-//   const HomePage({super.key});
-
-//   @override
-//   State<HomePage> createState() => _HomePageState();
-// }
-
-// class _HomePageState extends State<HomePage> {
-//   final TextEditingController serviceCodeController = TextEditingController();
-//   final TextEditingController serviceTitleController = TextEditingController();
-//   final TextEditingController serviceDurationController =
-//       TextEditingController();
-
-//   List<Map<String, dynamic>> newData = [];
-//   List<CustomerEvent> currentData = [];
-//   List<Map<String, dynamic>> customerData = [];
-//   Map<String, Map<String, dynamic>> services = {};
-//   List<FlSpot> graphDataPoints = [];
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return Scaffold(
-//       appBar: _buildAppBar(),
-//       body: Center(
-//         child: Padding(
-//           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-//           child: ListView(
-//             children: [
-//               _buildActionButtons(),
-//               const SizedBox(height: 20),
-//               _buildServiceForm(),
-//               const SizedBox(height: 20),
-//               buildGraphDisplay(),
-//               const SizedBox(height: 20),
-//               buildCustomerDataTable(),
-//               const SizedBox(height: 20),
-//               buildChronologicalEventsTable(),
-//             ],
-//           ),
-//         ),
-//       ),
-//     );
-//   }
-
-//   AppBar _buildAppBar() {
-//     return AppBar(
-//       backgroundColor:
-//           Colors.blue, // Replace `PrimaryColor` with a color directly
-//       title: const Text(
-//         'Simulation Clock Table',
-//         style: TextStyle(
-//           color: Colors.white,
-//           fontSize: 25,
-//           fontWeight: FontWeight.bold,
-//         ),
-//       ),
-//     );
-//   }
-
-//   // Action buttons for uploading file, simulating data, saving, and clearing data
-//   Widget _buildActionButtons() {
-//     return Row(
-//       mainAxisAlignment: MainAxisAlignment.spaceAround,
-//       children: [
-//         _buildColumnButtons([
-//           CustomButton(onPressed: initializeData, text: 'Upload File'),
-//           CustomButton(onPressed: generateCustomers, text: 'Simulate'),
-//         ]),
-//         const Divider(thickness: 2),
-//         _buildColumnButtons([
-//           CustomButton(onPressed: saveAllData, text: 'Save Data'),
-//           CustomButton(onPressed: clearAllData, text: 'Clear Data'),
-//         ]),
-//       ],
-//     );
-//   }
-
-//   Widget _buildColumnButtons(List<Widget> buttons) {
-//     return Column(
-//       children: buttons
-//           .map((button) => Padding(
-//                 padding: const EdgeInsets.symmetric(vertical: 5),
-//                 child: button,
-//               ))
-//           .toList(),
-//     );
-//   }
-
-//   Widget _buildServiceForm() {
-//     return Container(
-//       padding: const EdgeInsets.all(10),
-//       decoration: BoxDecoration(
-//         borderRadius: BorderRadius.circular(10),
-//       ),
-//       child: Column(
-//         crossAxisAlignment: CrossAxisAlignment.start,
-//         children: [
-//           const Text('Add New Service',
-//               style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-//           const SizedBox(height: 10),
-//           _buildTextInputField(
-//               controller: serviceCodeController, labelText: 'Service Code:'),
-//           _buildTextInputField(
-//               controller: serviceTitleController, labelText: 'Service Title:'),
-//           _buildTextInputField(
-//               controller: serviceDurationController,
-//               labelText: 'Duration (min):',
-//               keyboardType: TextInputType.number),
-//           const SizedBox(height: 10),
-//           _buildAddServiceButton(),
-//         ],
-//       ),
-//     );
-//   }
-
-//   Widget _buildTextInputField({
-//     required TextEditingController controller,
-//     required String labelText,
-//     TextInputType keyboardType = TextInputType.text,
-//   }) {
-//     return Padding(
-//       padding: const EdgeInsets.only(bottom: 10),
-//       child: TextFormField(
-//         controller: controller,
-//         decoration: InputDecoration(
-//           labelText: labelText,
-//           border: const OutlineInputBorder(),
-//         ),
-//         keyboardType: keyboardType,
-//       ),
-//     );
-//   }
-
-//   Widget _buildAddServiceButton() {
-//     return Center(
-//       child: ElevatedButton(
-//         style: ButtonStyle(
-//           fixedSize: WidgetStateProperty.all(const Size(160, 40)),
-//           backgroundColor: WidgetStateProperty.all(
-//               Colors.blue), // Replace `PrimaryColor` here
-//         ),
-//         onPressed: _addService,
-//         child: const Text(
-//           'Add Service',
-//           style: TextStyle(
-//             color: Colors.white,
-//             fontSize: 20,
-//             fontWeight: FontWeight.bold,
-//           ),
-//         ),
-//       ),
-//     );
-//   }
-
-//   Future<void> initializeData() async {
-//     FilePickerResult? result = await FilePicker.platform.pickFiles(
-//       type: FileType.custom,
-//       allowedExtensions: ['xlsx', 'xls'],
-//     );
-
-//     if (result != null && result.files.isNotEmpty) {
-//       String? filePath = result.files.single.path;
-//       var file = File(filePath!);
-//       try {
-//         var bytes = file.readAsBytesSync();
-//         var excel = Excel.decodeBytes(bytes);
-//         for (var table in excel.tables.keys) {
-//           for (var row in excel.tables[table]!.rows) {
-//             if (row.isNotEmpty) {
-//               // Extract the service details based on the image
-//               var serviceCode = row[0]?.value; // Column 1: Service Code
-//               var serviceTitle = row[1]?.value; // Column 2: Service Title
-//               var serviceDuration =
-//                   row[2]?.value; // Column 3: Service Duration (minutes)
-
-//               // Check for valid services and add to the services map
-//               if (serviceCode != null &&
-//                   serviceTitle != null &&
-//                   serviceDuration != null) {
-//                 services[serviceCode.toString()] = {
-//                   'serviceCode': serviceCode.toString(),
-//                   'serviceTitle': serviceTitle.toString(),
-//                   'serviceDuration': serviceDuration.toString(),
-//                 };
-//               }
-//             }
-//           }
-//         }
-
-//         print("Services Loaded: $services");
-//         setState(() {
-//           updateDisplays();
-//         });
-//       } catch (e) {
-//         print('Error while processing Excel file: $e');
-//       }
-//     } else {
-//       print('No file selected');
-//     }
-//   }
-
-//   void _processExcelFile(String filePath) {
-//     try {
-//       final bytes = File(filePath).readAsBytesSync();
-//       final excel = Excel.decodeBytes(bytes);
-//       currentData = _extractExcelData(excel);
-//       setState(() {
-//         updateDisplays();
-//       });
-//     } catch (e) {
-//       print('Error while processing Excel file: $e');
-//     }
-//   }
-
-//   void updateDisplays() {
-//     // Update the graph data points based on currentData
-//     graphDataPoints = List.generate(currentData.length, (index) {
-//       // Ensure serviceDuration is parsed as a double
-//       double serviceDuration =
-//           double.tryParse(currentData[index].serviceDuration) ?? 0.0;
-
-//       return FlSpot(index.toDouble(), serviceDuration);
-//     });
-
-//     // Update newData with the currentData for the DataTables to display
-//     newData = currentData.map((event) {
-//       return {
-//         'Customer ID': event.customerId,
-//         'Event Type': event.eventType,
-//         'Clock Time': event.clockTime,
-//         'Service Code': event.serviceCode,
-//         'Service Title': event.serviceTitle,
-//         'Service Duration': event.serviceDuration,
-//         'End Time': event.endTime,
-//       };
-//     }).toList();
-
-//     setState(() {}); // Refresh the UI with the updated data
-//   }
-
-//   List<CustomerEvent> _extractExcelData(Excel excel) {
-//     final List<CustomerEvent> data = [];
-//     for (var table in excel.tables.keys) {
-//       for (var row in excel.tables[table]!.rows) {
-//         if (row.isNotEmpty) {
-//           data.add(CustomerEvent(
-//             customerId: row[0]?.value.toString() ?? '',
-//             eventType: row[1]?.value.toString() ?? '',
-//             clockTime: row[2]?.value.toString() ?? '',
-//             serviceCode: row[3]?.value.toString() ?? '',
-//             serviceTitle: row[4]?.value.toString() ?? '',
-//             serviceDuration: row[5]?.value.toString() ?? '',
-//             endTime: row[6]?.value.toString() ?? '',
-//           ));
-//         }
-//       }
-//     }
-//     return data;
-//   }
-
-  // Widget buildCustomerDataTable() {
-  //   return SingleChildScrollView(
-  //     scrollDirection: Axis.horizontal,
-  //     child: DataTable(
-  //       columns: const [
-  //         DataColumn(label: Text('Customer ID')),
-  //         DataColumn(label: Text('Event Type')),
-  //         DataColumn(label: Text('Clock Time')),
-  //         DataColumn(label: Text('Service Code')),
-  //         DataColumn(label: Text('Service Title')),
-  //         DataColumn(label: Text('Service Duration')),
-  //         DataColumn(label: Text('End Time')),
-  //       ],
-  //       rows: newData.map((data) => _buildDataRow(data)).toList(),
-  //     ),
+// void clearAllData() {
+  //   showDialog(
+  //     context: context,
+  //     builder: (BuildContext context) {
+  //       return AlertDialog(
+  //         title: const Text("Confirm Clear"),
+  //         content: const Text("Are you sure you want to clear all data?"),
+  //         actions: [
+  //           TextButton(
+  //             onPressed: () {
+  //               setState(() {
+  //                 newData.clear();
+  //                 currentData.clear();
+  //                 services.clear();
+  //                 graphDataPoints.clear();
+  //               });
+  //               Navigator.of(context).pop(); // Close the dialog
+  //             },
+  //             child: const Text("Yes"),
+  //           ),
+  //           TextButton(
+  //             onPressed: () {
+  //               Navigator.of(context).pop(); // Close the dialog
+  //             },
+  //             child: const Text("No"),
+  //           ),
+  //         ],
+  //       );
+  //     },
   //   );
   // }
 
-  // DataRow _buildDataRow(Map<String, dynamic> data) {
-  //   return DataRow(cells: [
-  //     DataCell(Text(data['Customer ID'].toString())),
-  //     DataCell(Text(data['Event Type'].toString())),
-  //     DataCell(Text(data['Clock Time'].toString())),
-  //     DataCell(Text(data['Service Code'].toString())),
-  //     DataCell(Text(data['Service Title'].toString())),
-  //     DataCell(Text(data['Service Duration'].toString())),
-  //     DataCell(Text(data['End Time'].toString())),
-  //   ]);
+  // void _addService() {
+  //   final serviceCode = serviceCodeController.text;
+  //   final serviceTitle = serviceTitleController.text;
+  //   final serviceDuration = serviceDurationController.text;
+  //   if (serviceCode.isNotEmpty &&
+  //       serviceTitle.isNotEmpty &&
+  //       serviceDuration.isNotEmpty) {
+  //     services[serviceCode] = {
+  //       'serviceCode': serviceCode,
+  //       'serviceTitle': serviceTitle,
+  //       'serviceDuration': serviceDuration,
+  //     };
+  //     print("Service Added: $serviceCode - $serviceTitle");
+  //     serviceCodeController.clear();
+  //     serviceTitleController.clear();
+  //     serviceDurationController.clear();
+  //   }
   // }
 
-  // Widget buildChronologicalEventsTable() {
-  //   return Padding(
-  //     padding: const EdgeInsets.all(10.0),
-  //     child: Column(
-  //       children: [
-  //         const Text(
-  //           'Chronological Order of Events',
-  //           style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-  //         ),
-  //         const SizedBox(height: 10),
-  //         SingleChildScrollView(
-  //           scrollDirection: Axis.horizontal,
-  //           child: DataTable(
-  //             columns: const [
-  //               DataColumn(label: Text('Time')),
-  //               DataColumn(label: Text('Event Type')),
-  //               DataColumn(label: Text('Details')),
-  //             ],
-  //             rows: currentData
-  //                 .map((event) => DataRow(cells: [
-  //                       DataCell(Text(event.clockTime)),
-  //                       DataCell(Text(event.eventType)),
-  //                       DataCell(Text(event.serviceTitle)),
-  //                     ]))
-  //                 .toList(),
+// Widget buildGraphDisplay() {
+  //   return Container(
+  //     height: 300, // Adjust as needed for visibility
+  //     width: double.infinity,
+  //     decoration: BoxDecoration(
+  //       color: Colors.grey[200], // Subtle background color
+  //       borderRadius: BorderRadius.circular(10),
+  //     ),
+  //     child: LineChart(
+  //       LineChartData(
+  //         lineBarsData: [
+  //           LineChartBarData(
+  //             spots: graphDataPoints,
+  //             isCurved: true, // Add smooth curves
+  //             gradient: const LinearGradient(
+  //               colors: [Colors.blueAccent, Colors.lightBlue],
+  //               begin: Alignment.topCenter,
+  //               end: Alignment.bottomCenter,
+  //             ), // Apply gradient to the line
+  //             belowBarData: BarAreaData(
+  //               show: true,
+  //               gradient: LinearGradient(
+  //                 colors: [
+  //                   Colors.blueAccent.withOpacity(0.3),
+  //                   Colors.lightBlue.withOpacity(0.0)
+  //                 ],
+  //                 begin: Alignment.topCenter,
+  //                 end: Alignment.bottomCenter,
+  //               ),
+  //             ), // Show gradient fill below the line
+  //             dotData: FlDotData(
+  //               show: true,
+  //               getDotPainter: (spot, percent, barData, index) {
+  //                 return FlDotCirclePainter(
+  //                   radius: 4,
+  //                   color: Colors.redAccent, // Customize dot color
+  //                   strokeWidth: 2,
+  //                   strokeColor: Colors.blueAccent,
+  //                 );
+  //               },
+  //             ),
+  //             isStrokeCapRound: true,
+  //             barWidth: 3, // Thicker line width
+  //           ),
+  //         ],
+  //         gridData: FlGridData(
+  //           show: true,
+  //           drawVerticalLine: true,
+  //           verticalInterval: 1,
+  //           horizontalInterval: 1,
+  //           getDrawingVerticalLine: (value) => FlLine(
+  //             color: Colors.grey.withOpacity(0.3),
+  //             strokeWidth: 1,
+  //             dashArray: [5, 5], // Dashed vertical lines
+  //           ),
+  //           getDrawingHorizontalLine: (value) => FlLine(
+  //             color: Colors.grey.withOpacity(0.3),
+  //             strokeWidth: 1,
+  //             dashArray: [5, 5], // Dashed horizontal lines
   //           ),
   //         ),
-  //       ],
+  //         titlesData: FlTitlesData(
+  //           leftTitles: AxisTitles(
+  //             sideTitles: SideTitles(
+  //               showTitles: true,
+  //               reservedSize: 30,
+  //               getTitlesWidget: (value, meta) {
+  //                 return Padding(
+  //                   padding: const EdgeInsets.only(right: 8.0),
+  //                   child: Text(
+  //                     value.toInt().toString(),
+  //                     style: const TextStyle(color: Colors.blueAccent),
+  //                   ),
+  //                 ); // Display customer ID on the y-axis
+  //               },
+  //             ),
+  //           ),
+  //           bottomTitles: AxisTitles(
+  //             sideTitles: SideTitles(
+  //               showTitles: true,
+  //               reservedSize: 30,
+  //               getTitlesWidget: (value, meta) {
+  //                 return Padding(
+  //                   padding: const EdgeInsets.only(top: 8.0),
+  //                   child: Text(
+  //                     value.toInt().toString(),
+  //                     style: const TextStyle(color: Colors.blueAccent),
+  //                   ),
+  //                 ); // Display clock time on the x-axis
+  //               },
+  //             ),
+  //           ),
+  //           topTitles: AxisTitles(
+  //             sideTitles: SideTitles(showTitles: false),
+  //           ),
+  //           rightTitles: AxisTitles(
+  //             sideTitles: SideTitles(showTitles: false),
+  //           ),
+  //         ),
+  //         borderData: FlBorderData(
+  //           show: true,
+  //           border: box_border.Border.all(
+  //             color: Colors.blueAccent,
+  //             width: 1,
+  //           ),
+  //         ),
+  //       ),
   //     ),
   //   );
   // }
-
-//   void generateCustomers() {
-//   if (services.isEmpty) {
-//     showDialog(
-//       context: context,
-//       builder: (context) => AlertDialog(
-//         title: const Text('Error'),
-//         content: const Text(
-//             'No services available! Please add services first or upload an Excel file.'),
-//         actions: [
-//           TextButton(
-//             onPressed: () => Navigator.of(context).pop(),
-//             child: const Text('OK'),
-//           ),
-//         ],
-//       ),
-//     );
-//     return;
-//   }
-
-//   // Clear the previous customer data
-//   currentData.clear();
-
-//   try {
-//     int customerCount = Random().nextInt(6) + 5; // Between 5 and 10 customers
-//     int arrivalTime = 0;
-
-//     // Simulate customers
-//     for (int i = 1; i <= customerCount; i++) {
-//       int interval = Random().nextInt(3) + 1; // Between 1 and 3 minutes
-//       arrivalTime += interval;
-
-//       // Randomly select a service from the loaded services
-//       var randomServiceKey = services.keys.elementAt(Random().nextInt(services.length));
-//       var selectedService = services[randomServiceKey]!;
-
-//       // Ensure the service duration is a valid integer
-//       String durationStr = selectedService['serviceDuration'].trim();
-//       int serviceDuration = int.tryParse(durationStr) ?? 0;
-
-//       int departureTime = arrivalTime + serviceDuration;
-
-//       // Add arrival event
-//       currentData.add(CustomerEvent(
-//         customerId: i.toString(),
-//         eventType: "Arrival",
-//         clockTime: arrivalTime.toString(),
-//         serviceCode: selectedService['serviceCode'],
-//         serviceTitle: selectedService['serviceTitle'],
-//         serviceDuration: serviceDuration.toString(),
-//         endTime: departureTime.toString(),
-//       ));
-
-//       // Add departure event
-//       currentData.add(CustomerEvent(
-//         customerId: i.toString(),
-//         eventType: "Departure",
-//         clockTime: departureTime.toString(),
-//         serviceCode: selectedService['serviceCode'],
-//         serviceTitle: selectedService['serviceTitle'],
-//         serviceDuration: serviceDuration.toString(),
-//         endTime: departureTime.toString(),
-//       ));
-//     }
-
-//     // Update the display
-//     setState(() {
-//       updateDisplays(); // Refresh the UI with the new data
-//     });
-//   } catch (e) {
-//     showDialog(
-//       context: context,
-//       builder: (context) => AlertDialog(
-//         title: const Text('Error'),
-//         content: Text('Failed to generate customers: $e'),
-//         actions: [
-//           TextButton(
-//             onPressed: () => Navigator.of(context).pop(),
-//             child: const Text('OK'),
-//           ),
-//         ],
-//       ),
-//     );
-//   }
-// }
-//   void saveAllData() {
-//     print("Saving all data...");
-//     // Code for saving all data
-//   }
-
-//   void clearAllData() {
-//         showDialog(
-//       context: context,
-//       builder: (BuildContext context) {
-//         return AlertDialog(
-//           title: const Text("Confirm Clear"),
-//           content: const Text("Are you sure you want to clear all data?"),
-//           actions: [
-//             TextButton(
-//               onPressed: () {
-//                 setState(() {
-//                   newData.clear();
-//                   currentData.clear();
-//                   services.clear();
-//                   graphDataPoints.clear();
-//                 });
-//                 Navigator.of(context).pop(); // Close the dialog
-//               },
-//               child: const Text("Yes"),
-//             ),
-//             TextButton(
-//               onPressed: () {
-//                 Navigator.of(context).pop(); // Close the dialog
-//               },
-//               child: const Text("No"),
-//             ),
-//           ],
-//         );
-//       },
-//     );
-//   }
-
-//   // Adds a new service to the services map
-//   void _addService() {
-//     final serviceCode = serviceCodeController.text;
-//     final serviceTitle = serviceTitleController.text;
-//     final serviceDuration = serviceDurationController.text;
-
-//     if (serviceCode.isNotEmpty &&
-//         serviceTitle.isNotEmpty &&
-//         serviceDuration.isNotEmpty) {
-//       services[serviceCode] = {
-//         'serviceCode': serviceCode,
-//         'serviceTitle': serviceTitle,
-//         'serviceDuration': serviceDuration,
-//       };
-//       print("Service Added: $serviceCode - $serviceTitle");
-
-//       serviceCodeController.clear();
-//       serviceTitleController.clear();
-//       serviceDurationController.clear();
-//     }
-//   }
-
-//   // Displays the graph using the FlChart library
-//   Widget buildGraphDisplay() {
-//     return Container(
-//       height: 200,
-//       width: double.infinity,
-//       decoration: BoxDecoration(
-//         borderRadius: BorderRadius.circular(10),
-//       ),
-//       child: LineChart(
-//         LineChartData(
-//           lineBarsData: [
-//             LineChartBarData(
-//               spots: graphDataPoints,
-//               isCurved: true,
-//               color: Colors.blue, // Replace PrimaryColor here
-//               belowBarData: BarAreaData(show: false),
-//             ),
-//           ],
-//           gridData: FlGridData(show: true),
-//           titlesData: FlTitlesData(show: true),
-//         ),
-//       ),
-//     );
-//   }
-// }
-
-// class CustomerEvent {
-//   final String customerId;
-//   final String eventType;
-//   final String clockTime;
-//   final String serviceCode;
-//   final String serviceTitle;
-//   final String serviceDuration;
-//   final String endTime;
-
-//   CustomerEvent({
-//     required this.customerId,
-//     required this.eventType,
-//     required this.clockTime,
-//     required this.serviceCode,
-//     required this.serviceTitle,
-//     required this.serviceDuration,
-//     required this.endTime,
-//   });
-// }
-
-// class CustomButton extends StatelessWidget {
-//   final VoidCallback onPressed;
-//   final String text;
-
-//   const CustomButton({
-//     super.key,
-//     required this.onPressed,
-//     required this.text,
-//   });
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return ElevatedButton(
-//       style: const ButtonStyle(
-//           backgroundColor: WidgetStatePropertyAll(Colors.blue)),
-//       onPressed: onPressed,
-//       child: Text(
-//         text,
-//         style: const TextStyle(color: Colors.white, fontSize: 16),
-//       ),
-//     );
-//   }
-// }
