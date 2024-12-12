@@ -18,8 +18,7 @@ class QueuingSystemGUI:
         self.root.title("Simulation System")
         self.root.geometry("1200x800")
         
-        self.simulation_type = "single"
-        
+        self.simulation_type = "single" 
 
         # Initialize theme state
         self.is_dark_mode = False
@@ -223,25 +222,21 @@ class QueuingSystemGUI:
         self.control_container = ttk.Frame(self.sidebar)
         self.service_container = ttk.Frame(self.sidebar)
         self.parallel_container = ttk.Frame(self.sidebar)
-        self.inventory_container = ttk.Frame(self.sidebar)
 
         # Create content frames
         self.control_content = ttk.Frame(self.control_container)
         self.service_content = ttk.Frame(self.service_container)
         self.parallel_content = ttk.Frame(self.parallel_container)
-        self.inventory_content = ttk.Frame(self.inventory_container)
 
         # Add container frames to notebook with icons
         self.sidebar.add(self.control_container, text="⚙️")
         self.sidebar.add(self.service_container, text="🔧")
         self.sidebar.add(self.parallel_container, text="📊")
-        self.sidebar.add(self.inventory_container, text="🪼")
 
         # Set up tooltip texts for the tabs
         self.create_tooltip(self.control_container, "Controls")
         self.create_tooltip(self.service_container, "Services")
         self.create_tooltip(self.parallel_container, "Parallel Server Data")
-        self.create_tooltip(self.inventory_container, "Inventory Sysytem")
 
         # Create the right panel and other components
         self.content_frame = ttk.Frame(self.main_container)
@@ -254,7 +249,6 @@ class QueuingSystemGUI:
         self.create_control_frame(self.control_content)
         self.create_service_form(self.service_content)
         self.create_Parallel_simulation_form(self.parallel_content)
-        self.create_Inventory_Form(self.inventory_content)
 
         # Create data frames
         self.create_data_frames()
@@ -269,8 +263,7 @@ class QueuingSystemGUI:
             tab_mapping = {
                 0: 'control',
                 1: 'service',
-                2: 'parallel',
-                3: 'inventory'
+                2: 'parallel'
             }
             return clicked_tab, tab_mapping.get(clicked_tab)
         except tk.TclError:  # Click was not on a tab
@@ -287,8 +280,7 @@ class QueuingSystemGUI:
         content_frames = {
             'control': self.control_content,
             'service': self.service_content,
-            'parallel': self.parallel_content,
-            'inventory' : self.inventory_content
+            'parallel': self.parallel_content
         }
         content_frame = content_frames[tab_name]
 
@@ -408,7 +400,7 @@ class QueuingSystemGUI:
         self.data_visible = True
 
     def create_data_frames(self) -> None:
-        """Create all data frames for both single, parallel server,and Inventory simulations."""
+        """Create all data frames for both single and parallel server simulations."""
         
         # Create containers only if they don't exist
         if not hasattr(self, 'tables_container'):
@@ -438,33 +430,6 @@ class QueuingSystemGUI:
             self.parallel_data_frame = ttk.LabelFrame(self.parallel_server_frame, text="Parallel Servers Simulation Data", padding="10")
             self.create_parallel_data_frame(self.parallel_data_frame)
             self.parallel_data_frame.pack(fill="both", expand=True, pady=5)
-
-            # Inventory Simulation View
-            self.inventory_simulation_frame = ttk.Frame(self.table_notebook)
-            
-            # Create Inventory Simulation Data frame
-            self.inventory_data_frame = ttk.LabelFrame(
-                self.inventory_simulation_frame, 
-                text="Inventory Simulation Data", 
-                padding="10"
-            )
-            self.create_inventory_data_frame(self.inventory_data_frame)
-            self.inventory_data_frame.pack(fill="both", expand=True, pady=5)
-            
-            # Create Inventory Simulation Summary frame
-            self.inventory_summary_frame = ttk.LabelFrame(
-                self.inventory_simulation_frame, 
-                text="Inventory Simulation Summary", 
-                padding="10"
-            )
-            self.create_inventory_summary_frame(self.inventory_summary_frame)
-            self.inventory_summary_frame.pack(fill="both", expand=True, pady=5)
-            
-            # Add inventory simulation frame to notebook
-            self.table_notebook.add(
-                self.inventory_simulation_frame, 
-                text="Inventory Simulation View"
-    )
             
             # Add frames to notebook
             self.table_notebook.add(self.single_server_frame, text="Single Server View")
@@ -486,12 +451,6 @@ class QueuingSystemGUI:
                 if hasattr(self, 'current_data') and not self.current_data.empty:
                     self.update_tree()
                     self.update_graph_multi_servers()
-            if simulation_type == "inventory":
-                self.table_notebook.select(3)
-                if hasattr(self, 'inventory_data') and not self.inventory_data.empty:
-                    self.update_inventory_tree()
-                    self.update_inventory_summary()
-                    self.update_inventory_graph()
             else:
                 self.table_notebook.select(0)  # Select single server tab
                 if hasattr(self, 'current_data') and not self.current_data.empty:
@@ -975,132 +934,6 @@ class QueuingSystemGUI:
             self.server_tree.column(col, width=120)
 
         self.server_tree.pack(fill="x", pady=(10, 10))
-
-    def create_Inventory_Form(self, parent: ttk.Frame) -> None:
-        """Create the inventory simulation setup form."""
-        # Main container
-        form_frame = ttk.Frame(parent, padding="10")
-        form_frame.pack(fill="both", expand=True)
-        
-        # Data Import/Export Section
-        upload_frame = ttk.LabelFrame(form_frame, text="Inventory Simulation", padding=10)
-        upload_frame.pack(fill="x", pady=(0, 10))
-
-        ttk.Button(upload_frame, text="Upload Configuration", command=self.upload_inventory_config).pack(side="left", padx=5)
-        ttk.Button(upload_frame, text="Save Configuration", command=self.save_inventory_config).pack(side="left", padx=5)
-        ttk.Button(upload_frame, text="Run Simulation", command=self.run_inventory_simulation).pack(side="left", padx=5)
-
-        # Pricing Configuration Section
-        pricing_frame = ttk.LabelFrame(form_frame, text="Pricing Parameters", padding=10)
-        pricing_frame.pack(fill="x", pady=(10, 10))
-
-        pricing_fields = [
-            ("Purchase Price per Unit:", "purchase_price_entry"),
-            ("Selling Price per Unit:", "selling_price_entry"),
-            ("Salvage Price per Unit:", "salvage_price_entry"),
-            ("Lost Profit Rate:", "lost_profit_rate_entry"),
-            ("Maximum Order Quantity:", "max_order_quantity_entry")
-        ]
-        
-        self.pricing_entries = {}
-        for label_text, entry_name in pricing_fields:
-            row_frame = ttk.Frame(pricing_frame)
-            row_frame.pack(fill="x", pady=2)
-            
-            ttk.Label(row_frame, text=label_text).pack(side="left")
-            
-            entry = ttk.Entry(row_frame, width=15)
-            entry.pack(side="right", padx=(5, 0), fill="x", expand=True)
-            self.pricing_entries[entry_name] = entry
-
-        # Day Type Configuration Section
-        day_type_frame = ttk.LabelFrame(form_frame, text="Day Type Probabilities", padding=10)
-        day_type_frame.pack(fill="x", pady=(10, 10))
-
-        day_type_fields = [
-            ("Day Type:", "day_type_entry"),
-            ("Probability:", "day_type_probability_entry"),
-            ("Cumulative Probability:", "day_type_cumulative_prob_entry")
-        ]
-        
-        self.day_type_entries = {}
-        for label_text, entry_name in day_type_fields:
-            row_frame = ttk.Frame(day_type_frame)
-            row_frame.pack(fill="x", pady=2)
-            
-            ttk.Label(row_frame, text=label_text).pack(side="left")
-            
-            entry = ttk.Entry(row_frame, width=15)
-            entry.pack(side="right", padx=(5, 0), fill="x", expand=True)
-            self.day_type_entries[entry_name] = entry
-
-        # Add button to add day type data
-        ttk.Button(day_type_frame, text="Add Day Type", command=self.add_day_type).pack(pady=10)
-
-        # Day Type TreeView
-        self.day_type_tree = ttk.Treeview(day_type_frame, columns=[
-            "Day Type", "Probability", "Cumulative Probability"
-        ], show="headings", height=5)
-        for col in self.day_type_tree["columns"]:
-            self.day_type_tree.heading(col, text=col)
-            self.day_type_tree.column(col, width=150)
-
-        self.day_type_tree.pack(fill="x", pady=(10, 10))
-
-        # Demand Distribution Section
-        demand_frame = ttk.LabelFrame(form_frame, text="Demand Distribution", padding=10)
-        demand_frame.pack(fill="x", pady=(10, 10))
-
-        demand_fields = [
-            ("Day Type:", "demand_day_type_entry"),
-            ("Demand Quantity:", "demand_quantity_entry"),
-            ("Probability:", "demand_probability_entry"),
-            ("Cumulative Probability:", "demand_cumulative_prob_entry")
-        ]
-        
-        self.demand_entries = {}
-        for label_text, entry_name in demand_fields:
-            row_frame = ttk.Frame(demand_frame)
-            row_frame.pack(fill="x", pady=2)
-            
-            ttk.Label(row_frame, text=label_text).pack(side="left")
-            
-            entry = ttk.Entry(row_frame, width=15)
-            entry.pack(side="right", padx=(5, 0), fill="x", expand=True)
-            self.demand_entries[entry_name] = entry
-
-        # Add button to add demand distribution data
-        ttk.Button(demand_frame, text="Add Demand Distribution", command=self.add_demand_distribution).pack(pady=10)
-
-        # Demand Distribution TreeView
-        self.demand_tree = ttk.Treeview(demand_frame, columns=[
-            "Day Type", "Demand Quantity", "Probability", "Cumulative Probability"
-        ], show="headings", height=5)
-        for col in self.demand_tree["columns"]:
-            self.demand_tree.heading(col, text=col)
-            self.demand_tree.column(col, width=120)
-
-        self.demand_tree.pack(fill="x", pady=(10, 10))
-
-        # Simulation Configuration
-        simulation_frame = ttk.LabelFrame(form_frame, text="Simulation Parameters", padding=10)
-        simulation_frame.pack(fill="x", pady=(10, 10))
-
-        simulation_fields = [
-            ("Simulation Days:", "simulation_days_entry"),
-            ("Number of Simulation Runs:", "simulation_runs_entry")
-        ]
-        
-        self.simulation_entries = {}
-        for label_text, entry_name in simulation_fields:
-            row_frame = ttk.Frame(simulation_frame)
-            row_frame.pack(fill="x", pady=2)
-            
-            ttk.Label(row_frame, text=label_text).pack(side="left")
-            
-            entry = ttk.Entry(row_frame, width=15)
-            entry.pack(side="right", padx=(5, 0), fill="x", expand=True)
-            self.simulation_entries[entry_name] = entry
 
     def add_arrival_data(self) -> None:
         """Add arrival probability data to the arrival tree."""
