@@ -48,18 +48,21 @@ const singleServer = (() => {
             response.events.forEach(data => {
                 // Populate customer row template
                 let customerRow = $(Templates.customerRow);
-                customerRow.find('td').eq(0).text(data['Customer ID']);
-                customerRow.find('td').eq(1).text(data['Event Type']);
-                customerRow.find('td').eq(2).text(data['Clock Time']);
-                customerRow.find('td').eq(3).text(data['Service Code']);
-                customerRow.find('td').eq(4).text(data['Service Title']);
-                customerRow.find('td').eq(5).text(data['Service Duration']);
-                customerRow.find('td').eq(6).text(data['End Time']);
-                if (hasArrivalProb && data['Arrival Probability'] !== undefined) customerRow.find('td').eq(7).text(data['Arrival Probability']);
-                else customerRow.find('td').eq(7).remove();
-                if (hasCompletionProb && data['Completion Probability'] !== undefined) customerRow.find('td').eq(8).text(data['Completion Probability']);
-                else customerRow.find('td').eq(7).remove();
-                $customerTbody.append(customerRow);
+                if (data['Event Type'] === 'Arrival') {
+                    customerRow.find('td').eq(0).text(data['Customer ID']);
+                    customerRow.find('td').eq(1).text(data['Interval Time']);
+                    customerRow.find('td').eq(2).text(data['Clock Time']);
+                    customerRow.find('td').eq(3).text(data['Service Code']);
+                    customerRow.find('td').eq(4).text(data['Service Title']);
+                    customerRow.find('td').eq(5).text(data['Start Time']);
+                    customerRow.find('td').eq(6).text(data['Service Duration']);
+                    customerRow.find('td').eq(7).text(data['End Time']);
+                    if (hasArrivalProb && data['Arrival Probability'] !== undefined) customerRow.find('td').eq(8).text(data['Arrival Probability']);
+                    else customerRow.find('td').eq(8).remove();
+                    if (hasCompletionProb && data['Completion Probability'] !== undefined) customerRow.find('td').eq(9).text(data['Completion Probability']);
+                    else customerRow.find('td').eq(8).remove();
+                    $customerTbody.append(customerRow);
+                }
 
                 // Populate event row template
                 let eventRow = $(Templates.eventRow);
@@ -176,7 +179,7 @@ const singleServer = (() => {
 
     function handleAddServiceSuccess(response) {
         const { service_code, service_title, service_duration } = response
-        let item = Templates.serverRow
+        let item = Templates.serviceItem
             .replace('{{code}}', service_code)
             .replace('{{title}}', service_title)
             .replace('{{duration}}', service_duration);

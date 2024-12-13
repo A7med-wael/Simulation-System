@@ -105,13 +105,14 @@ const parallelServer = (() => {
     function addArrival(e) {
         e.preventDefault();
         const formData = new FormData($('#addArrivalForm')[0]);
-        executeAjax('/add_arrival', formData, handleAddArrivalSuccess, 'adding arrival data', $('#addArrivalButton'));
+        executeAjax('/add_data', formData, handleAddArrivalSuccess, 'adding new data', $('#addArrivalButton'));
     }
 
     function handleAddArrivalSuccess(response) {
         clearArrivalTable();
         if (response.success) {
-            response.events.forEach(data => populateArrivalRow(data));
+            response.events.arrivals.forEach(data => populateArrivalRow(data));
+            response.events.servers.forEach(data => populateServerRow(data));
         }
         checkArrivalServerBodyTables();
     }
@@ -182,7 +183,7 @@ const parallelServer = (() => {
     }
     
     function refreshPlot() {
-        $('#servers_plot').attr('src', '/servers_plot.png?' + new Date().getTime());
+        $('#servers_plot').attr('src', '/parallel_servers_plot.png?' + new Date().getTime());
     }
 
     function clearData() {

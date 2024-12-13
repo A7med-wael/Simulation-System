@@ -43,26 +43,28 @@ def clear_data():
     return data_service.clear_data()
 
 # Parallel server routes
-@app.route('/add_arrival', methods=['POST'])
-def add_arrival():
+@app.route('/add_data', methods=['POST'])
+def add_data():
     data = request.form
-    time_between_arrivals = int(data.get('time_between_arrivals'))
-    probability = float(data.get('arrival_probability'))
-    accumulative_probability = float(data.get('accumulative_probability'))
-    digit_assignment_from = int(data.get('digit_assignment_from'))
-    digit_assignment_to = int(data.get('digit_assignment_to'))
-    return data_service.add_arrival(time_between_arrivals, probability, accumulative_probability, digit_assignment_from, digit_assignment_to)
-
-@app.route('/add_server', methods=['POST'])
-def add_server():
-    data = request.form
-    server_no = int(data.get('server_no'))
+    crt_arr = int(data.get('crt_arr'))
     service_time = int(data.get('service_time'))
-    probability = float(data.get('server_probability'))
-    accumulative_probability = float(data.get('server_accumulative_probability'))
-    digit_assignment_from = int(data.get('server_digit_assignment_from'))
-    digit_assignment_to = int(data.get('server_digit_assignment_to'))
-    return data_service.add_server(server_no, service_time, probability, accumulative_probability, digit_assignment_from, digit_assignment_to)
+    server_name = int(data.get('server_no'))
+    # probability = float(data.get('arrival_probability'))
+    # accumulative_probability = float(data.get('accumulative_probability'))
+    # digit_assignment_from = int(data.get('digit_assignment_from'))
+    # digit_assignment_to = int(data.get('digit_assignment_to'))
+    return data_service.add_data(crt_arr, service_time, server_name)
+
+# @app.route('/add_server', methods=['POST'])
+# def add_server():
+#     data = request.form
+#     server_no = int(data.get('server_no'))
+#     service_time = int(data.get('service_time'))
+#     probability = float(data.get('server_probability'))
+#     accumulative_probability = float(data.get('server_accumulative_probability'))
+#     digit_assignment_from = int(data.get('server_digit_assignment_from'))
+#     digit_assignment_to = int(data.get('server_digit_assignment_to'))
+#     return data_service.add_server(server_no, service_time, probability, accumulative_probability, digit_assignment_from, digit_assignment_to)
 
 @app.route('/simulate_servers', methods=['POST'])
 def simulate_servers():

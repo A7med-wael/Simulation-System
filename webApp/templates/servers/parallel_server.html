@@ -34,10 +34,23 @@
                     <div class="card-body">
                         <form id="addArrivalForm">
                             <div class="mb-2">
-                                <label for="time_between_arrivals" class="form-label">Time Between Arrivals</label>
-                                <input type="number" class="form-control" id="time_between_arrivals" name="time_between_arrivals" required>
+                                <label for="time_between_arrivals" class="form-label">Arrival Time</label>
+                                <input type="number" class="form-control" id="time_between_arrivals" name="crt_arr" required>
                             </div>
+
                             <div class="mb-2">
+                                <label for="service_time" class="form-label">Service Time</label>
+                                <input type="number" class="form-control" id="service_time" name="service_time" required>
+                            </div>
+
+                            <div class="mb-2">
+                                <label for="server-number" class="form-label">Server No:</label>
+                                <select class="form-select" id="server-number" name="server_no">
+                                    <option value="1">1 (Able)</option>
+                                    <option value="2">2 (Baker)</option>
+                                </select>
+                            </div>
+                            <!-- <div class="mb-2">
                                 <label for="arrival_probability" class="form-label">Probability</label>
                                 <input type="number" min="0.00" max="1.00" step="0.01" class="form-control" id="arrival_probability" name="arrival_probability" required>
                             </div>
@@ -52,17 +65,17 @@
                             <div class="mb-2">
                                 <label for="digit_assignment_to" class="form-label">Digit Assignment To</label>
                                 <input type="number" min="1" class="form-control" id="digit_assignment_to" name="digit_assignment_to" required>
-                            </div>
+                            </div> -->
                             <button type="button" id="addArrivalButton" class="btn btn-primary w-100">
-                                <i class="fa-sharp fa-regular fa-floppy-disk"></i> Add Arrival Data
+                                <i class="fa-sharp fa-regular fa-floppy-disk"></i> Add New Data
                                 <span class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
                             </button>
                         </form>
                     </div>
                 </div>
 
-                <!-- Add New Server Data Section -->
-                <div class="card my-2">
+                <!-- Add New Server Data Section-->
+                 <!-- <div class="card my-2">
                     <div class="card-header bg-dark text-white"><i class="fas fa-plus"></i> Add Server</div>
                     <div class="card-body">
                         <form id="addServerForm">
@@ -100,7 +113,7 @@
                             </button>
                         </form>
                     </div>
-                </div>
+                </div> -->
             </div>
 
             <div class="col-md-9">
@@ -201,8 +214,8 @@
                     </div>
                 </div>
 
-                <!-- Simulation Summary -->
-                <div class="card mb-1">
+                 <!-- Simulation Summary -->
+                 <div class="card mb-1">
                     <div class="card-header bg-dark text-white">
                         <i class="fas fa-chart-pie"></i> Simulation Summary
                     </div>
@@ -215,6 +228,7 @@
                         </ul>
                     </div>
                 </div>
+
             </div>
         </section>
     </div>

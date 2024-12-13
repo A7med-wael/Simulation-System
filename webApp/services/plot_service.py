@@ -201,6 +201,12 @@ class PlotService(IPlotService):
                       label=service_label if not labels_added[service_label] else "")
             labels_added[service_label] = True
 
+           # ** Add points at the start and end of the service duration **
+            ax.scatter(service_start, server_pos, color=colors[row['Server']], marker='o', 
+                label=f'Start {row["Server"]}' if f'Start {row["Server"]}' not in labels_added else "")
+            ax.scatter(row['End Time'], server_pos, color=colors[row['Server']], marker='o',
+                   label=f'End {row["Server"]}' if f'End {row["Server"]}' not in labels_added else "")
+
             # Customer ID label
             ax.text(row['Clock Time'], -0.2, f'C{row["Customer ID"]}',
                     fontsize=8, rotation=45, ha='right', va='top')
