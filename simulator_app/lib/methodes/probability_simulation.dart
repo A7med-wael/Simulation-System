@@ -2,7 +2,6 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:simulator_app/models/customer_event.dart';
 
-
 void probabilitySimulation({
   required Map<String, Map<String, dynamic>> services,
   required List<CustomerEvent> currentData,

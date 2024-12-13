@@ -3,10 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:simulator_app/constents.dart';
 import 'package:simulator_app/methodes/add_service.dart';
 import 'package:simulator_app/methodes/clear_all_data.dart';
-import 'package:simulator_app/methodes/customer_generator.dart';
+import 'package:simulator_app/methodes/simulate_one_serever.dart';
 import 'package:simulator_app/methodes/initialize_data.dart';
 import 'package:simulator_app/methodes/probability_simulation.dart';
 import 'package:simulator_app/methodes/save_all_data.dart';
+import 'package:simulator_app/methodes/simulate_two_serever.dart';
 import 'package:simulator_app/models/customer_event.dart';
 import 'package:simulator_app/widgets/action_buttons.dart';
 import 'package:simulator_app/widgets/build_chronological_events_table.dart';
@@ -14,7 +15,6 @@ import 'package:simulator_app/widgets/build_customer_data_table.dart';
 import 'package:simulator_app/widgets/custom_button.dart';
 import 'package:simulator_app/widgets/service_form.dart';
 import 'package:flutter/src/painting/box_border.dart' as box_border;
-
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -35,6 +35,7 @@ class _HomePageState extends State<HomePage> {
   List<CustomerEvent> simulatedData = [];
   List<FlSpot> graphDataPoints = [];
   bool showProbabilityColumns = false;
+  bool showParallelColumns = false;
 
   @override
   Widget build(BuildContext context) {
@@ -84,7 +85,7 @@ class _HomePageState extends State<HomePage> {
                             services: services,
                             onSuccess: () {});
                       }, onSimulate: () {
-                        generateCustomers(
+                        simulateOneServer(
                             services: services,
                             currentData: currentData,
                             context: context,
@@ -117,15 +118,54 @@ class _HomePageState extends State<HomePage> {
                 ),
               ],
             ),
-            const ExpansionTile(
-              title: Text(
+            ExpansionTile(
+              title: const Text(
                 'parallel server',
                 style: TextStyle(fontWeight: FontWeight.bold),
               ),
-              leading: Icon(Icons.touch_app),
+              leading: const Icon(Icons.touch_app),
               children: [
                 Padding(
-                  padding: EdgeInsets.all(16.0),
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    children: [
+                      buildActionButtons(onUploadFile: () {
+                        initializeData(
+                            context: context,
+                            services: services,
+                            onSuccess: () {});
+                      }, onSimulate: () {
+                        showParallelColumns = true;
+                        simulateTwoServers(
+                            services: services,
+                            currentData: currentData,
+                            context: context,
+                            updateDisplays: updateDisplays);
+                      }, onProbability: () {
+                        showProbabilityColumns = true;
+                        probabilitySimulation(
+                          services: services,
+                          currentData: currentData,
+                          context: context,
+                          updateDisplays: updateDisplays,
+                        );
+                      }),
+                      const SizedBox(height: 30),
+                      buildServiceForm(
+                          codeController: serviceCodeController,
+                          titleController: serviceTitleController,
+                          durationController: serviceDurationController,
+                          onAddService: () {
+                            addService(
+                              serviceCodeController: serviceCodeController,
+                              serviceTitleController: serviceTitleController,
+                              serviceDurationController:
+                                  serviceDurationController,
+                              services: services,
+                            );
+                          }),
+                    ],
+                  ),
                 ),
               ],
             ),
@@ -168,8 +208,10 @@ class _HomePageState extends State<HomePage> {
               children: [
                 const SizedBox(height: 20),
                 buildCustomerDataTable(
-                    newData: newData,
-                    showProbabilityColumns: showProbabilityColumns),
+                  newData: newData,
+                  showProbabilityColumns: showProbabilityColumns,
+                  showParallelColumns: showParallelColumns,
+                ),
                 const SizedBox(height: 20),
                 buildChronologicalEventsTable(
                     currentData: currentData,
@@ -210,6 +252,7 @@ class _HomePageState extends State<HomePage> {
         'Service Title': event.serviceTitle,
         'Service Duration': event.serviceDuration,
         'End Time': event.endTime,
+        'Server': event.server,
         'Arrival Probability': event.arrivalProb,
         'Completion Probability': event.completionProb,
       };

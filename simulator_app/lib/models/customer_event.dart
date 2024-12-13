@@ -8,7 +8,7 @@ class CustomerEvent {
   final String endTime;
   final String arrivalProb;
   final String completionProb;
-  final String serverId;
+  final String server;
 
   CustomerEvent({
     required this.customerId,
@@ -20,6 +20,6 @@ class CustomerEvent {
     required this.endTime,
     this.arrivalProb = '',
     this.completionProb = '',
-    this.serverId = '',
+    this.server = '',
   });
 }

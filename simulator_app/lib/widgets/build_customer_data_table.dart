@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
 Widget buildCustomerDataTable(
-    {required List<Map<String, dynamic>> newData,required bool showProbabilityColumns}) {
+    {required List<Map<String, dynamic>> newData,
+    required bool showProbabilityColumns,
+    required bool showParallelColumns,}) {
   return Column(
     children: [
       const Text(
@@ -19,6 +21,8 @@ Widget buildCustomerDataTable(
             const DataColumn(label: Text('Service Title')),
             const DataColumn(label: Text('Service Duration')),
             const DataColumn(label: Text('End Time')),
+            if (showParallelColumns)
+              const DataColumn(label: Text("Server")),
             if (showProbabilityColumns)
               const DataColumn(label: Text('Arrival Probability')),
             if (showProbabilityColumns)
@@ -33,6 +37,8 @@ Widget buildCustomerDataTable(
                     DataCell(Text(data['Service Title'].toString())),
                     DataCell(Text(data['Service Duration'].toString())),
                     DataCell(Text(data['End Time'].toString())),
+                    if (showParallelColumns)
+                      DataCell(Text(data['Server'].toString())),
                     if (showProbabilityColumns)
                       DataCell(Text(data['Arrival Probability'].toString())),
                     if (showProbabilityColumns)
