@@ -4,10 +4,15 @@ const parallelServer = (() => {
         initEventHandlers([
             { selector: '#parallelUploadFileButton', event: 'click', handler: (e) => handleFileUpload(e) },
             { selector: '#parallelDownloadDataButton', event: 'click', handler: downloadDataAsFile },
-            { selector: '#parallelClearDataButton', event: 'click', handler: () => $('#clearDataModal').modal('show') },
-            { selector: '#ConfirmClearDataButton', event: 'click', handler: () => clearDataAjax(clearData, '/clear_data_parallel') },
+            { selector: '#parallelClearDataButton', event: 'click', handler: () => $('#clearDataModal').data('context', 'parallel').modal('show') },
+            { selector: '#confirmClearDataButton', event: 'click',
+                handler: () => {
+                    if ($('#clearDataModal').data('context') === 'parallel') {
+                        clearDataAjax(clearData, '/clear_data_parallel');
+                    }
+                }
+            },
             { selector: '#addArrivalButton', event: 'click', handler: (e) => addArrival(e) },
-            { selector: '#addServerButton', event: 'click', handler: (e) => addServer(e) },
             { selector: '#parallelSimulateButton', event: 'click', handler: (e) => simulateServersWithSpinner(e) }
         ]);
     }
@@ -105,27 +110,15 @@ const parallelServer = (() => {
     function addArrival(e) {
         e.preventDefault();
         const formData = new FormData($('#addArrivalForm')[0]);
-        executeAjax('/add_arrival', formData, handleAddArrivalSuccess, 'adding arrival data', $('#addArrivalButton'));
+        executeAjax('/add_data', formData, handleAddArrivalSuccess, 'adding new data', $('#addArrivalButton'));
     }
 
     function handleAddArrivalSuccess(response) {
         clearArrivalTable();
-        if (response.success) {
-            response.events.forEach(data => populateArrivalRow(data));
-        }
-        checkArrivalServerBodyTables();
-    }
-
-    function addServer(e) {
-        e.preventDefault();
-        const formData = new FormData($('#addServerForm')[0]);
-        executeAjax('/add_server', formData, handleAddServerSuccess, 'adding server', $('#addServerButton'));
-    }
-
-    function handleAddServerSuccess(response) {
         clearServerTable();
         if (response.success) {
-            response.events.forEach(data => populateServerRow(data));
+            response.events.arrivals.forEach(data => populateArrivalRow(data));
+            response.events.servers.forEach(data => populateServerRow(data));
         }
         checkArrivalServerBodyTables();
     }

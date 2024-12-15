@@ -3,7 +3,12 @@ __pycache__/
 .env
 venv/
 *.xlsx  # Ignore data files if not needed in the repo
-webApp/static/assets/font-awesome/
-webApp/static/assets/favicon_io/
+webApp/static/assets/font-awesome/*
+!webApp/static/assets/font-awesome/css/
+webApp/static/assets/font-awesome/css/*
+!webApp/static/assets/font-awesome/css/all.min.css
+!webApp/static/assets/font-awesome/css/sharp-regular.min.css
+!webApp/static/assets/font-awesome/webfonts
+!webApp/static/assets/font-awesome/LICENSE.txt
 .idea/
 webApp/.idea

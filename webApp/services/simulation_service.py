@@ -12,10 +12,10 @@ class SimulationService(ISimulationService):
 
         arrival_probability = 0.6
         service_completion_probability = 0.8
-        num_customers = random.randint(5, 10)
+        num_customers = 10
         arrival_time = 0
         new_data = []
-        service_end_times = {}
+        end_time = 0
         assigned_customer_ids = []  # List to track assigned customer IDs
 
         for _ in range(num_customers):
@@ -37,10 +37,10 @@ class SimulationService(ISimulationService):
                 service_code = random.choice(list(services.keys()))
                 service_info = services[service_code]
                 service_duration = service_info['duration']
-                start_service_time = max(arrival_time, service_end_times.get(service_code, arrival_time))
+                start_service_time = max(arrival_time, end_time)
                 departure_time = start_service_time + service_duration
 
-                service_end_times[service_code] = departure_time
+                end_time = departure_time
 
                 arrival_prob = round(random.random(), 2) if probability_simulation else None
                 completion_prob = round(service_completion_probability, 2) if probability_simulation else None
@@ -48,12 +48,14 @@ class SimulationService(ISimulationService):
                 base_event_data = {
                     'Customer ID': customer_id,
                     'Event Type': 'Arrival',
+                    'Interval Time': interval,
                     'Clock Time': arrival_time,
                     'Service Code': service_code,
                     'Service Title': service_info['title'],
                     'Service Duration': service_duration,
                     'End Time': departure_time,
-                    'Waiting Time': start_service_time - arrival_time
+                    'Waiting Time': start_service_time - arrival_time,
+                    'Start Time': start_service_time
                 }
 
                 if probability_simulation:
@@ -65,12 +67,14 @@ class SimulationService(ISimulationService):
                 base_event_data = {
                     'Customer ID': customer_id,
                     'Event Type': 'Departure',
+                    'Interval Time': interval,
                     'Clock Time': departure_time,
                     'Service Code': service_code,
                     'Service Title': service_info['title'],
                     'Service Duration': service_duration,
                     'End Time': departure_time,
-                    'Waiting Time': start_service_time - arrival_time
+                    'Waiting Time': start_service_time - arrival_time,
+                    'Start Time': start_service_time
                 }
 
                 if probability_simulation:

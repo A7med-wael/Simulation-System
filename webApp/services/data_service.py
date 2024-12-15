@@ -9,10 +9,12 @@ from .interfaces.i_data_service import IDataService
 
 class DataService(IDataService):
     def __init__(self):
+        self.counter = 0
+        self.prev_arr = 0
         self.services = {}
         self.current_data = pd.DataFrame(columns=[
-            'Customer ID', 'Event Type', 'Clock Time',
-            'Service Code', 'Service Title', 'Service Duration', 'End Time'
+            'Customer ID', 'Event Type', 'Interval Time', 'Clock Time',
+            'Service Code', 'Service Title', 'Service Duration', 'End Time', 'Start Time'
         ])
         self.arrivals = pd.DataFrame(columns=[
             'Time Between Arrival', 'Probability', 'Accumulative Probability',
@@ -33,7 +35,9 @@ class DataService(IDataService):
         if code in self.services:
             raise ValueError(f"Service code '{code}' already exists.")
         self.services[code] = {'title': title, 'duration': duration}
+        self.counter += 1
         return jsonify({'success': True, 'service_code': code, 'service_title': title, 'service_duration': duration})
+        
 
     def validate_numeric_data(self, *values):
         """Utility method to validate numeric values."""
@@ -41,19 +45,63 @@ class DataService(IDataService):
             if not isinstance(value, (int, float)) or value <= 0:
                 raise ValueError(f"Invalid numeric value: {value}")
 
-    def add_arrival(self, time_between_arrivals, probability, accumulative_time, digit_assignment_from, digit_assignment_to):
-        """Add an arrival event with a time and probability."""
-        self.validate_numeric_data(time_between_arrivals, probability, accumulative_time, digit_assignment_from, digit_assignment_to)
-        new_arrival = pd.DataFrame([[time_between_arrivals, probability, accumulative_time, digit_assignment_from, digit_assignment_to]], columns=self.arrivals.columns)
-        self.arrivals = pd.concat([self.arrivals, new_arrival], ignore_index=True)
-        return jsonify({'success': True, 'events': self.arrivals.to_dict('records')})
+    def add_data(self, crt_arr, service_time, server_no):
+        """Add a single arrival or server entry and recalculate probabilities."""
+        time_between_arrivals = self.prev_arr + crt_arr
+        self.prev_arr = crt_arr
 
-    def add_server(self, server_no, service_time, probability, accumulative_time, digit_assignment_from, digit_assignment_to):
-        """Add a server with a service time and probability."""
-        self.validate_numeric_data(server_no, service_time, probability, accumulative_time, digit_assignment_from, digit_assignment_to)
-        new_server = pd.DataFrame([[server_no, service_time, probability, accumulative_time, digit_assignment_from, digit_assignment_to]], columns=self.servers.columns)
+        new_arrival = pd.DataFrame([{
+            "Time Between Arrival": time_between_arrivals,
+            "Probability": 0,
+            "Accumulative Probability": 0,
+            "Digit Assignment From": 0,
+            "Digit Assignment To": 0
+        }])
+        self.arrivals = pd.concat([self.arrivals, new_arrival], ignore_index=True)
+
+        total_time = self.arrivals["Time Between Arrival"].sum()
+        temp_accum = 0
+        for idx, row in self.arrivals.iterrows():
+            prob = row["Time Between Arrival"] / total_time
+            accum_prob = temp_accum + prob
+            digit_from = int(temp_accum * 100)
+            digit_to = 100 if idx == len(self.arrivals) - 1 else int(accum_prob * 100) - 1
+
+            self.arrivals.at[idx, "Probability"] = round(prob, 2)
+            self.arrivals.at[idx, "Accumulative Probability"] = round(accum_prob, 2)
+            self.arrivals.at[idx, "Digit Assignment From"] = digit_from
+            self.arrivals.at[idx, "Digit Assignment To"] = digit_to
+
+            temp_accum = accum_prob
+
+        new_server = pd.DataFrame([{
+            "Server No.": server_no,
+            "Service Time": service_time
+        }])
         self.servers = pd.concat([self.servers, new_server], ignore_index=True)
-        return jsonify({'success': True, 'events': self.servers.to_dict('records')})
+
+        total_service_time = self.servers["Service Time"].sum()
+        temp_accum = 0
+        for idx, row in self.servers.iterrows():
+            prob = row["Service Time"] / total_service_time
+            accum_prob = temp_accum + prob
+            digit_from = int(temp_accum * 100)
+            digit_to = 100 if idx == len(self.servers) - 1 else int(accum_prob * 100) - 1
+
+            self.servers.at[idx, "Server Probability"] = round(prob, 2)
+            self.servers.at[idx, "Server Accumulative Probability"] = round(accum_prob, 2)
+            self.servers.at[idx, "Server Digit Assignment From"] = digit_from
+            self.servers.at[idx, "Server Digit Assignment To"] = digit_to
+
+            temp_accum = accum_prob
+
+        return jsonify({
+            'success': True,
+            'events': {
+                "arrivals": self.arrivals.to_dict('records'),
+                "servers": self.servers.to_dict('records')
+            }
+        })
 
     def upload_services_from_file(self, file):
         df = pd.read_excel(file) if file.filename.endswith('.xlsx') else pd.read_csv(file)
@@ -70,28 +118,22 @@ class DataService(IDataService):
         try:
             df = pd.read_excel(file) if file.filename.endswith('.xlsx') else pd.read_csv(file)
 
-            # Clean up the column names and drop unnamed columns
-            df.columns = df.columns.str.strip()  # Remove leading/trailing whitespace
-            df = df.loc[:, ~df.columns.str.contains('^Unnamed')]  # Drop unnamed columns
+            df.columns = df.columns.str.strip()
+            df = df.loc[:, ~df.columns.str.contains('^Unnamed')]
 
-            # Validate arrival columns and update arrivals data
             arrival_cols = self.arrivals.columns
             if all(col in df.columns for col in arrival_cols):
                 self.arrivals = df[arrival_cols].dropna().copy()
 
-            # Validate server columns and update servers data
             server_cols = self.servers.columns
             if all(col in df.columns for col in server_cols):
                 self.servers = df[server_cols].dropna().copy()
             else:
-                # Create a new DataFrame for servers if not all columns are provided
                 missing_cols = set(server_cols) - set(df.columns)
                 if missing_cols == {'Server No.'}:
-                    # If only Server No. is missing, add it with random values between 1 and 10
-                    df['Server No.'] = np.random.randint(1, 11, size=len(df))  # Random integers between 1 and 10
+                    df['Server No.'] = np.random.randint(1, 11, size=len(df))
                     self.servers = df[server_cols].dropna().copy()
                 else:
-                    # Handle case where other server columns are also missing
                     raise ValueError(f"Missing server columns: {', '.join(missing_cols)}")
 
             return jsonify({
@@ -110,8 +152,8 @@ class DataService(IDataService):
 
     def clear_parallel_data(self):
         """Clear arrival and server data."""
-        self.arrivals = self.arrivals.iloc[0:0]
-        self.servers = self.servers.iloc[0:0]
+        self.arrivals = pd.DataFrame(columns=self.arrivals.columns)
+        self.servers = pd.DataFrame(columns=self.servers.columns)
         return jsonify({'success': True, 'message': 'All data cleared successfully!'})
 
     def download_data(self):

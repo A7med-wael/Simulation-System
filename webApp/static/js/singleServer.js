@@ -4,8 +4,14 @@ const singleServer = (() => {
         initEventHandlers([
             { selector: '#uploadFileButton', event: 'click', handler: (e) => handleFileUpload(e) },
             { selector: '#downloadDataButton', event: 'click', handler: downloadDataAsFile },
-            { selector: '#clearDataButton', event: 'click', handler: () => $('#clearDataModal').modal('show') },
-            { selector: '#confirmClearDataButton', event: 'click', handler: () => clearDataAjax(clearData, '/clear_data_a') },
+            { selector: '#clearDataButton', event: 'click', handler: () => $('#clearDataModal').data('context', 'single').modal('show') },
+            { selector: '#confirmClearDataButton', event: 'click',
+                handler: () => {
+                    if ($('#clearDataModal').data('context') === 'single') {
+                        clearDataAjax(clearData, '/clear_data');
+                    }
+                }
+            },
             { selector: '#addServiceButton', event: 'click', handler: (e) => addService(e)},
             { selector: '#simulateButton', event: 'click', handler: (e) => simulateCustomersWithSpinner(e) }
         ]);
@@ -48,18 +54,21 @@ const singleServer = (() => {
             response.events.forEach(data => {
                 // Populate customer row template
                 let customerRow = $(Templates.customerRow);
-                customerRow.find('td').eq(0).text(data['Customer ID']);
-                customerRow.find('td').eq(1).text(data['Event Type']);
-                customerRow.find('td').eq(2).text(data['Clock Time']);
-                customerRow.find('td').eq(3).text(data['Service Code']);
-                customerRow.find('td').eq(4).text(data['Service Title']);
-                customerRow.find('td').eq(5).text(data['Service Duration']);
-                customerRow.find('td').eq(6).text(data['End Time']);
-                if (hasArrivalProb && data['Arrival Probability'] !== undefined) customerRow.find('td').eq(7).text(data['Arrival Probability']);
-                else customerRow.find('td').eq(7).remove();
-                if (hasCompletionProb && data['Completion Probability'] !== undefined) customerRow.find('td').eq(8).text(data['Completion Probability']);
-                else customerRow.find('td').eq(7).remove();
-                $customerTbody.append(customerRow);
+                if (data['Event Type'] === 'Arrival') {
+                    customerRow.find('td').eq(0).text(data['Customer ID']);
+                    customerRow.find('td').eq(1).text(data['Interval Time']);
+                    customerRow.find('td').eq(2).text(data['Clock Time']);
+                    customerRow.find('td').eq(3).text(data['Service Code']);
+                    customerRow.find('td').eq(4).text(data['Service Title']);
+                    customerRow.find('td').eq(5).text(data['Start Time']);
+                    customerRow.find('td').eq(6).text(data['Service Duration']);
+                    customerRow.find('td').eq(7).text(data['End Time']);
+                    if (hasArrivalProb && data['Arrival Probability'] !== undefined) customerRow.find('td').eq(8).text(data['Arrival Probability']);
+                    else customerRow.find('td').eq(8).remove();
+                    if (hasCompletionProb && data['Completion Probability'] !== undefined) customerRow.find('td').eq(9).text(data['Completion Probability']);
+                    else customerRow.find('td').eq(8).remove();
+                    $customerTbody.append(customerRow);
+                }
 
                 // Populate event row template
                 let eventRow = $(Templates.eventRow);
