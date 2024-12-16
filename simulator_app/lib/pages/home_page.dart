@@ -14,7 +14,6 @@ import 'package:simulator_app/widgets/build_chronological_events_table.dart';
 import 'package:simulator_app/widgets/build_customer_data_table.dart';
 import 'package:simulator_app/widgets/custom_button.dart';
 import 'package:simulator_app/widgets/service_form.dart';
-import 'package:flutter/src/painting/box_border.dart' as box_border;
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -40,10 +39,15 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      // backgroundColor: Color.fromARGB(255, 108, 140, 156),
+      backgroundColor: PrimaryColor,
       appBar: AppBar(
+        iconTheme: IconThemeData(color: Colors.white),
+        forceMaterialTransparency: true,
+        elevation: 0,
         backgroundColor: PrimaryColor,
         title: const Text(
-          'Simulation Clock Table',
+          'Simulation Overview',
           style: TextStyle(
             color: Colors.white,
             fontSize: 25,
@@ -60,167 +64,144 @@ class _HomePageState extends State<HomePage> {
                 color: PrimaryColor,
               ),
               child: Text(
-                'Menu',
+                'Can not serve mysilf',
                 style: TextStyle(
                   color: Colors.white,
-                  fontSize: 30,
+                  fontSize: 24,
                   fontWeight: FontWeight.bold,
                 ),
               ),
             ),
-            ExpansionTile(
-              title: const Text(
-                'single server',
-                style: TextStyle(fontWeight: FontWeight.bold),
+            buildServerExpansionTile(
+              title: 'Single Server',
+              onSimulate: () => simulateOneServer(
+                services: services,
+                currentData: currentData,
+                context: context,
+                updateDisplays: updateDisplays,
               ),
-              leading: const Icon(Icons.touch_app),
-              children: [
-                Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    children: [
-                      buildActionButtons(onUploadFile: () {
-                        initializeData(
-                            context: context,
-                            services: services,
-                            onSuccess: () {});
-                      }, onSimulate: () {
-                        simulateOneServer(
-                            services: services,
-                            currentData: currentData,
-                            context: context,
-                            updateDisplays: updateDisplays);
-                      }, onProbability: () {
-                        showProbabilityColumns = true;
-                        probabilitySimulation(
-                          services: services,
-                          currentData: currentData,
-                          context: context,
-                          updateDisplays: updateDisplays,
-                        );
-                      }),
-                      const SizedBox(height: 30),
-                      buildServiceForm(
-                          codeController: serviceCodeController,
-                          titleController: serviceTitleController,
-                          durationController: serviceDurationController,
-                          onAddService: () {
-                            addService(
-                              serviceCodeController: serviceCodeController,
-                              serviceTitleController: serviceTitleController,
-                              serviceDurationController:
-                                  serviceDurationController,
-                              services: services,
-                            );
-                          }),
-                    ],
-                  ),
-                ),
-              ],
             ),
-            ExpansionTile(
-              title: const Text(
-                'parallel server',
-                style: TextStyle(fontWeight: FontWeight.bold),
+            buildServerExpansionTile(
+              title: 'Parallel Server',
+              onSimulate: () => simulateTwoServers(
+                services: services,
+                currentData: currentData,
+                context: context,
+                updateDisplays: updateDisplays,
               ),
-              leading: const Icon(Icons.touch_app),
-              children: [
-                Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    children: [
-                      buildActionButtons(onUploadFile: () {
-                        initializeData(
-                            context: context,
-                            services: services,
-                            onSuccess: () {});
-                      }, onSimulate: () {
-                        showParallelColumns = true;
-                        simulateTwoServers(
-                            services: services,
-                            currentData: currentData,
-                            context: context,
-                            updateDisplays: updateDisplays);
-                      }, onProbability: () {
-                        showProbabilityColumns = true;
-                        probabilitySimulation(
-                          services: services,
-                          currentData: currentData,
-                          context: context,
-                          updateDisplays: updateDisplays,
-                        );
-                      }),
-                      const SizedBox(height: 30),
-                      buildServiceForm(
-                          codeController: serviceCodeController,
-                          titleController: serviceTitleController,
-                          durationController: serviceDurationController,
-                          onAddService: () {
-                            addService(
-                              serviceCodeController: serviceCodeController,
-                              serviceTitleController: serviceTitleController,
-                              serviceDurationController:
-                                  serviceDurationController,
-                              services: services,
-                            );
-                          }),
-                    ],
-                  ),
-                ),
-              ],
             ),
-            SizedBox(height: MediaQuery.of(context).size.height * 0.49),
-            Column(
-              children: [
-                CustomButton(
-                    onPressed: () {
-                      saveAllData(currentData: currentData, context: context);
-                    },
-                    text: 'Save Data'),
-                CustomButton(
-                    onPressed: () {
-                      clearAllData(
-                          services: services,
-                          currentData: currentData,
-                          context: context,
-                          newData: newData,
-                          graphDataPoints: graphDataPoints,
-                          updateDisplays: updateDisplays);
-                    },
-                    text: 'Clear Data'),
-              ],
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 16.0),
+              child: Column(
+                children: [
+                  CustomButton(
+                    onPressed: () => saveAllData(
+                      currentData: currentData,
+                      context: context,
+                    ),
+                    text: 'Save Data',
+                  ),
+                  CustomButton(
+                    onPressed: () => clearAllData(
+                      services: services,
+                      currentData: currentData,
+                      context: context,
+                      newData: newData,
+                      graphDataPoints: graphDataPoints,
+                      updateDisplays: updateDisplays,
+                    ),
+                    text: 'Clear Data',
+                  ),
+                ],
+              ),
             ),
           ],
         ),
       ),
       body: Container(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           gradient: LinearGradient(
-            colors: [Color.fromARGB(255, 108, 140, 156), Colors.white],
-            begin: Alignment.topRight,
-            end: Alignment.bottomLeft,
+              colors: [
+                // Color.fromARGB(255, 108, 140, 156),
+                // Color.fromARGB(255, 172, 199, 212)
+                // Colors.red, Colors.green
+                Color(0xff022b3a),
+                Color(0xff1f7a8c),
+              ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              stops: [.00001, .5]),
+          borderRadius: BorderRadius.circular(20), // Rounded corners
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              offset: Offset(0, 5),
+              blurRadius: 15,
+              spreadRadius: 2,
+            ),
+          ],
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(height: 16),
+              Expanded(
+                child: ClipRRect(
+                  borderRadius:
+                      BorderRadius.circular(15), // Rounded inner widgets
+                  child: ListView(
+                    children: [
+                      buildSectionHeader('Customer Data Table'),
+                      const SizedBox(height: 10),
+                      buildCustomerDataTable(
+                        newData: newData,
+                        showProbabilityColumns: showProbabilityColumns,
+                        showParallelColumns: showParallelColumns,
+                      ),
+                      const SizedBox(height: 20),
+                      buildSectionHeader('Chronological Events'),
+                      const SizedBox(height: 10),
+                      buildChronologicalEventsTable(
+                        currentData: currentData,
+                        showProbabilityColumns: showProbabilityColumns,
+                      ),
+                      const SizedBox(height: 40),
+                      buildSectionHeader('Graph Display'),
+                      const SizedBox(height: 10),
+                      buildGraphDisplay(),
+                    ],
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
-        child: Center(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-            child: ListView(
-              children: [
-                const SizedBox(height: 20),
-                buildCustomerDataTable(
-                  newData: newData,
-                  showProbabilityColumns: showProbabilityColumns,
-                  showParallelColumns: showParallelColumns,
-                ),
-                const SizedBox(height: 20),
-                buildChronologicalEventsTable(
-                    currentData: currentData,
-                    showProbabilityColumns: showProbabilityColumns),
-                const SizedBox(height: 40),
-                buildGraphDisplay(),
-              ],
-            ),
+      ),
+    );
+  }
+
+  Widget buildSectionHeader(String title) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.8),
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            offset: Offset(0, 3),
+            blurRadius: 8,
           ),
+        ],
+      ),
+      child: Text(
+        title,
+        style: const TextStyle(
+          fontSize: 20,
+          fontWeight: FontWeight.bold,
+          color: Color.fromARGB(255, 60, 90, 110),
         ),
       ),
     );
@@ -263,10 +244,11 @@ class _HomePageState extends State<HomePage> {
 
   Widget buildGraphDisplay() {
     return Container(
-      height: 300, // Adjust as needed for visibility
-      width: double.infinity,
+      // padding: EdgeInsets.symmetric(vertical: 8),
+      // margin: EdgeInsets.symmetric(vertical: 8),
+      height: 320,
       decoration: BoxDecoration(
-        color: Colors.grey[200], // Subtle background color
+        color: Colors.grey[200],
         borderRadius: BorderRadius.circular(10),
       ),
       child: LineChart(
@@ -274,36 +256,32 @@ class _HomePageState extends State<HomePage> {
           lineBarsData: [
             LineChartBarData(
               spots: graphDataPoints,
-              isCurved: true, // Add smooth curves
+              isCurved: true,
               gradient: const LinearGradient(
                 colors: [Colors.blueAccent, Colors.lightBlue],
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-              ), // Apply gradient to the line
+              ),
               belowBarData: BarAreaData(
                 show: true,
                 gradient: LinearGradient(
                   colors: [
                     Colors.blueAccent.withOpacity(0.3),
-                    Colors.lightBlue.withOpacity(0.0)
+                    Colors.lightBlue.withOpacity(0.0),
                   ],
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
                 ),
-              ), // Show gradient fill below the line
+              ),
               dotData: FlDotData(
                 show: true,
                 getDotPainter: (spot, percent, barData, index) {
                   return FlDotCirclePainter(
                     radius: 4,
-                    color: Colors.redAccent, // Customize dot color
+                    color: Colors.redAccent,
                     strokeWidth: 2,
                     strokeColor: Colors.blueAccent,
                   );
                 },
               ),
               isStrokeCapRound: true,
-              barWidth: 3, // Thicker line width
+              barWidth: 3,
             ),
           ],
           gridData: FlGridData(
@@ -314,61 +292,78 @@ class _HomePageState extends State<HomePage> {
             getDrawingVerticalLine: (value) => FlLine(
               color: Colors.grey.withOpacity(0.3),
               strokeWidth: 1,
-              dashArray: [5, 5], // Dashed vertical lines
             ),
             getDrawingHorizontalLine: (value) => FlLine(
               color: Colors.grey.withOpacity(0.3),
               strokeWidth: 1,
-              dashArray: [5, 5], // Dashed horizontal lines
             ),
           ),
           titlesData: FlTitlesData(
-            leftTitles: AxisTitles(
-              sideTitles: SideTitles(
-                showTitles: true,
-                reservedSize: 30,
-                getTitlesWidget: (value, meta) {
-                  return Padding(
-                    padding: const EdgeInsets.only(right: 8.0),
-                    child: Text(
-                      value.toInt().toString(),
-                      style: const TextStyle(color: Colors.blueAccent),
-                    ),
-                  ); // Display customer ID on the y-axis
-                },
-              ),
-            ),
-            bottomTitles: AxisTitles(
-              sideTitles: SideTitles(
-                showTitles: true,
-                reservedSize: 30,
-                getTitlesWidget: (value, meta) {
-                  return Padding(
-                    padding: const EdgeInsets.only(top: 8.0),
-                    child: Text(
-                      value.toInt().toString(),
-                      style: const TextStyle(color: Colors.blueAccent),
-                    ),
-                  ); // Display clock time on the x-axis
-                },
-              ),
-            ),
-            topTitles: AxisTitles(
-              sideTitles: SideTitles(showTitles: false),
-            ),
-            rightTitles: AxisTitles(
-              sideTitles: SideTitles(showTitles: false),
-            ),
-          ),
-          borderData: FlBorderData(
             show: true,
-            border: box_border.Border.all(
-              color: Colors.blueAccent,
-              width: 1,
+            bottomTitles: AxisTitles(
+              sideTitles: SideTitles(showTitles: true),
+            ),
+            leftTitles: AxisTitles(
+              sideTitles: SideTitles(showTitles: true),
             ),
           ),
         ),
       ),
+    );
+  }
+
+  Widget buildServerExpansionTile({
+    required String title,
+    required VoidCallback onSimulate,
+  }) {
+    return ExpansionTile(
+      title: Text(
+        title,
+        style: const TextStyle(fontWeight: FontWeight.bold),
+      ),
+      leading: const Icon(Icons.touch_app),
+      children: [
+        Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            children: [
+              buildActionButtons(
+                onUploadFile: () {
+                  initializeData(
+                    context: context,
+                    services: services,
+                    onSuccess: () {},
+                  );
+                },
+                onSimulate: onSimulate,
+                onProbability: () {
+                  showProbabilityColumns = true;
+                  probabilitySimulation(
+                    services: services,
+                    currentData: currentData,
+                    context: context,
+                    updateDisplays: updateDisplays,
+                  );
+                },
+              ),
+              const SizedBox(height: 30),
+              buildServiceForm(
+                codeController: serviceCodeController,
+                titleController: serviceTitleController,
+                durationController: serviceDurationController,
+                onAddService: () {
+                  addService(
+                    serviceCodeController: serviceCodeController,
+                    serviceTitleController: serviceTitleController,
+                    serviceDurationController: serviceDurationController,
+                    services: services,
+                  );
+                },
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }

@@ -3,6 +3,8 @@ import 'package:excel/excel.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 
+import '../widgets/custom_dilog.dart';
+
 Future<void> initializeData({
   required BuildContext context,
   required Map<String, Map<String, dynamic>> services,
@@ -26,7 +28,9 @@ Future<void> initializeData({
             var serviceTitle = row[1]?.value;
             var serviceDuration = row[2]?.value;
 
-            if (serviceCode != null && serviceTitle != null && serviceDuration != null) {
+            if (serviceCode != null &&
+                serviceTitle != null &&
+                serviceDuration != null) {
               services[serviceCode.toString()] = {
                 'serviceCode': serviceCode.toString(),
                 'serviceTitle': serviceTitle.toString(),
@@ -37,16 +41,22 @@ Future<void> initializeData({
         }
       }
       onSuccess();
-      showDialog(
+      CustomDialog.showCustomDialog(
+        dialogType: DialogType.Success,
         context: context,
-        builder: (context) => AlertDialog(
-          title: const Text('File Loaded'),
-          content: const Text('File loaded successfully.'),
-          actions: [
-            TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('OK')),
-          ],
-        ),
+        title: 'File Loaded successfully',
+        description: '',
       );
+      // showDialog(
+      //   context: context,
+      //   builder: (context) => AlertDialog(
+      //     title: const Text('File Loaded'),
+      //     content: const Text('File loaded successfully.'),
+      //     actions: [
+      //       TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('OK')),
+      //     ],
+      //   ),
+      // );
     } catch (e) {
       print('Error while processing Excel file: $e');
     }

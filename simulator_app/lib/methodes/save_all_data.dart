@@ -4,24 +4,32 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:simulator_app/models/customer_event.dart';
 
+import '../widgets/custom_dilog.dart';
+
 void saveAllData({
   required List<CustomerEvent> currentData,
   required BuildContext context,
 }) async {
   if (currentData.isEmpty) {
-    showDialog(
+    CustomDialog.showCustomDialog(
+      dialogType: DialogType.Failure,
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text("Warning"),
-        content: const Text("No data to save!"),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text("OK"),
-          ),
-        ],
-      ),
+      title: "Warning",
+      description: "No data to save!",
     );
+    // showDialog(
+    //   context: context,
+    //   builder: (context) => AlertDialog(
+    //     title: const Text("Warning"),
+    //     content: const Text("No data to save!"),
+    //     actions: [
+    //       TextButton(
+    //         onPressed: () => Navigator.of(context).pop(),
+    //         child: const Text("OK"),
+    //       ),
+    //     ],
+    //   ),
+    // );
     return;
   }
 
@@ -59,34 +67,45 @@ void saveAllData({
 
       List<int> bytes = excel.encode() ?? [];
       File(filePath).writeAsBytesSync(bytes);
-
-      showDialog(
+      CustomDialog.showCustomDialog(
+        dialogType: DialogType.Success,
         context: context,
-        builder: (context) => AlertDialog(
-          title: const Text("Success"),
-          content: const Text("Data saved successfully!"),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text("OK"),
-            ),
-          ],
-        ),
+        title: "Success",
+        description: "Data saved successfully!",
       );
+      // showDialog(
+      //   context: context,
+      //   builder: (context) => AlertDialog(
+      //     title: const Text("Success"),
+      //     content: const Text("Data saved successfully!"),
+      //     actions: [
+      //       TextButton(
+      //         onPressed: () => Navigator.of(context).pop(),
+      //         child: const Text("OK"),
+      //       ),
+      //     ],
+      //   ),
+      // );
     }
   } catch (e) {
-    showDialog(
+    CustomDialog.showCustomDialog(
+      dialogType: DialogType.Failure,
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text("Error"),
-        content: Text("Failed to save data: ${e.toString()}"),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text("OK"),
-          ),
-        ],
-      ),
+      title: 'Error',
+      description: "Failed to save data: ${e.toString()}",
     );
+    // showDialog(
+    //   context: context,
+    //   builder: (context) => AlertDialog(
+    //     title: const Text("Error"),
+    //     content: Text("Failed to save data: ${e.toString()}"),
+    //     actions: [
+    //       TextButton(
+    //         onPressed: () => Navigator.of(context).pop(),
+    //         child: const Text("OK"),
+    //       ),
+    //     ],
+    //   ),
+    // );
   }
 }

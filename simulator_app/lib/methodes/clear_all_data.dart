@@ -24,12 +24,7 @@ void clearAllData({
                   services.clear();
                   graphDataPoints.clear();
                   updateDisplays();
-                // setState(() {
-                //   newData.clear();
-                //   currentData.clear();
-                //   services.clear();
-                //   graphDataPoints.clear();
-                // });
+               
                 Navigator.of(context).pop(); // Close the dialog
               },
               child: const Text("Yes"),

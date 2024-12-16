@@ -2,6 +2,8 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:simulator_app/models/customer_event.dart';
 
+import '../widgets/custom_dilog.dart';
+
 void probabilitySimulation({
   required Map<String, Map<String, dynamic>> services,
   required List<CustomerEvent> currentData,
@@ -9,20 +11,26 @@ void probabilitySimulation({
   required VoidCallback updateDisplays,
 }) {
   if (services.isEmpty) {
-    showDialog(
+    CustomDialog.showCustomDialog(
+      dialogType: DialogType.Failure,
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Error'),
-        content:
-            const Text('No services available! Please add services first.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('OK'),
-          ),
-        ],
-      ),
+      title: 'Error',
+      description: 'No services available! Please add services first.',
     );
+    // showDialog(
+    //   context: context,
+    //   builder: (context) => AlertDialog(
+    //     title: const Text('Error'),
+    //     content:
+    //         const Text('No services available! Please add services first.'),
+    //     actions: [
+    //       TextButton(
+    //         onPressed: () => Navigator.of(context).pop(),
+    //         child: const Text('OK'),
+    //       ),
+    //     ],
+    //   ),
+    // );
     return;
   }
 
@@ -82,35 +90,45 @@ void probabilitySimulation({
     currentData.clear();
     currentData.addAll(simulatedData);
     updateDisplays();
-
-    showDialog(
+    CustomDialog.showCustomDialog(
+      dialogType: DialogType.Success,
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Probability Simulation Complete'),
-        content:
-            const Text('Probability-based simulation completed successfully!'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('OK'),
-          ),
-        ],
-      ),
+      title: 'Probability Simulation Complete',
+      description: 'successfully',
     );
-  }
-  catch (e) {
-    showDialog(
+    // showDialog(
+    //   context: context,
+    //   builder: (context) => AlertDialog(
+    //     title: const Text('Probability Simulation Complete'),
+    //     content:
+    //         const Text('Probability-based simulation completed successfully!'),
+    //     actions: [
+    //       TextButton(
+    //         onPressed: () => Navigator.of(context).pop(),
+    //         child: const Text('OK'),
+    //       ),
+    //     ],
+    //   ),
+    // );
+  } catch (e) {
+    CustomDialog.showCustomDialog(
+      dialogType: DialogType.Failure,
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Error'),
-        content: Text('Failed to run probability simulation: $e'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('OK'),
-          ),
-        ],
-      ),
+      title: 'Error',
+      description: 'Failed to run probability simulation: $e',
     );
+    // showDialog(
+    //   context: context,
+    //   builder: (context) => AlertDialog(
+    //     title: const Text('Error'),
+    //     content: Text('Failed to run probability simulation: $e'),
+    //     actions: [
+    //       TextButton(
+    //         onPressed: () => Navigator.of(context).pop(),
+    //         child: const Text('OK'),
+    //       ),
+    //     ],
+    //   ),
+    // );
   }
 }

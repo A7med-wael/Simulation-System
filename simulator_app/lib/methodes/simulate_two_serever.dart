@@ -2,6 +2,8 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:simulator_app/models/customer_event.dart';
 
+import '../widgets/custom_dilog.dart';
+
 void simulateTwoServers({
   required Map<String, Map<String, dynamic>> services,
   required List<CustomerEvent> currentData,
@@ -9,19 +11,26 @@ void simulateTwoServers({
   required VoidCallback updateDisplays,
 }) {
   if (services.isEmpty) {
-    showDialog(
+    CustomDialog.showCustomDialog(
+      dialogType: DialogType.Failure,
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Error'),
-        content: const Text('No services available! Please add services first or upload an Excel file.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('OK'),
-          ),
-        ],
-      ),
+      title: 'Error',
+      description:
+          'No services available! Please add services first or upload an Excel file.',
     );
+    // showDialog(
+    //   context: context,
+    //   builder: (context) => AlertDialog(
+    //     title: const Text('Error'),
+    //     content: const Text('No services available! Please add services first or upload an Excel file.'),
+    //     actions: [
+    //       TextButton(
+    //         onPressed: () => Navigator.of(context).pop(),
+    //         child: const Text('OK'),
+    //       ),
+    //     ],
+    //   ),
+    // );
     return;
   }
 
@@ -30,11 +39,13 @@ void simulateTwoServers({
   Map<String, dynamic> endtimeServer2 = {};
 
   try {
-    int customerCount = Random().nextInt(6) + 5; // Generate between 5 and 10 customers
+    int customerCount =
+        Random().nextInt(6) + 5; // Generate between 5 and 10 customers
     int arrivalTime = 0;
 
     for (int i = 1; i <= customerCount; i++) {
-      int interval = Random().nextInt(3) + 1; // Random interval between arrivals
+      int interval =
+          Random().nextInt(3) + 1; // Random interval between arrivals
       arrivalTime += interval;
 
       var randomServiceKey =
@@ -61,7 +72,8 @@ void simulateTwoServers({
         serverEnd = endtimeServer2[randomServiceKey]!;
       } else {
         // Both servers busy; assign to the one that becomes available first
-        if (endtimeServer1[randomServiceKey]! <= endtimeServer2[randomServiceKey]!) {
+        if (endtimeServer1[randomServiceKey]! <=
+            endtimeServer2[randomServiceKey]!) {
           serverAssigned = "Server 1";
           arrivalTime = endtimeServer1[randomServiceKey]!;
           endtimeServer1[randomServiceKey] = arrivalTime + serviceDuration;
@@ -106,32 +118,45 @@ void simulateTwoServers({
     currentData.addAll(tempEvents);
 
     updateDisplays();
-    showDialog(
+    CustomDialog.showCustomDialog(
+      dialogType: DialogType.Success,
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Simulation Complete'),
-        content: const Text('Simulation with two servers completed successfully!'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('OK'),
-          ),
-        ],
-      ),
+      title: 'Simulation Complete',
+      description: 'Simulation with two servers completed successfully!',
     );
+    // showDialog(
+    //   context: context,
+    //   builder: (context) => AlertDialog(
+    //     title: const Text('Simulation Complete'),
+    //     content:
+    //         const Text('Simulation with two servers completed successfully!'),
+    //     actions: [
+    //       TextButton(
+    //         onPressed: () => Navigator.of(context).pop(),
+    //         child: const Text('OK'),
+    //       ),
+    //     ],
+    //   ),
+    // );
   } catch (e) {
-    showDialog(
+    CustomDialog.showCustomDialog(
+      dialogType: DialogType.Failure,
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Error'),
-        content: Text('Failed to generate customers: $e'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('OK'),
-          ),
-        ],
-      ),
+      title: 'Error',
+      description: 'Failed to generate customers: $e',
     );
+    // showDialog(
+    //   context: context,
+    //   builder: (context) => AlertDialog(
+    //     title: const Text('Error'),
+    //     content: Text('Failed to generate customers: $e'),
+    //     actions: [
+    //       TextButton(
+    //         onPressed: () => Navigator.of(context).pop(),
+    //         child: const Text('OK'),
+    //       ),
+    //     ],
+    //   ),
+    // );
   }
 }

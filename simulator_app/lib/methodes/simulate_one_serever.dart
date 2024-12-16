@@ -1,6 +1,7 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:simulator_app/models/customer_event.dart';
+import 'package:simulator_app/widgets/custom_dilog.dart';
 
 void simulateOneServer({
   required Map<String, Map<String, dynamic>> services,
@@ -9,20 +10,32 @@ void simulateOneServer({
   required VoidCallback updateDisplays,
 }) {
   if (services.isEmpty) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Error'),
-        content: const Text(
-            'No services available! Please add services first or upload an Excel file.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('OK'),
-          ),
-        ],
-      ),
-    );
+    CustomDialog.showCustomDialog(
+        context: context,
+        title: "Error",
+        description:
+            'No services available! Please add services first or upload an Excel file.',
+        dialogType: DialogType.Failure);
+    // CustomDialog.showCustomDialog(
+    //   context: context,
+    //   title: "Error",
+    // description:
+    //     'No services available! Please add services first or upload an Excel file.',
+    // );
+    // showDialog(
+    //   context: context,
+    //   builder: (context) => AlertDialog(
+    //     title: const Text('Error'),
+    //     content: const Text(
+    //         'No services available! Please add services first or upload an Excel file.'),
+    //     actions: [
+    //       TextButton(
+    //         onPressed: () => Navigator.of(context).pop(),
+    //         child: const Text('OK'),
+    //       ),
+    //     ],
+    //   ),
+    // );
     return;
   }
 
@@ -79,19 +92,25 @@ void simulateOneServer({
     currentData.addAll(tempEvents);
 
     updateDisplays();
-    showDialog(
+    CustomDialog.showCustomDialog(
+      dialogType: DialogType.Success,
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Simulation Complete'),
-        content: const Text('Simulation process completed successfully!'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('OK'),
-          ),
-        ],
-      ),
+      title: "Simulation Complete",
+      description: 'Simulation process completed successfully!',
     );
+    // showDialog(
+    //   context: context,
+    //   builder: (context) => AlertDialog(
+    //     title: const Text('Simulation Complete'),
+    //     content: const Text('Simulation process completed successfully!'),
+    //     actions: [
+    //       TextButton(
+    //         onPressed: () => Navigator.of(context).pop(),
+    //         child: const Text('OK'),
+    //       ),
+    //     ],
+    //   ),
+    // );
   } catch (e) {
     showDialog(
       context: context,
