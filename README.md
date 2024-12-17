@@ -17,6 +17,9 @@ This is a **Queuing System Simulation** tool built using **Python** and **Tkinte
 ### Desktop-App
 ![App Screenshot Placeholder](Simulation-app-desk.png)
 
+### Flutter App
+![Synoptic Table Planning Whiteboard  (1)](https://github.com/user-attachments/assets/52d48364-6792-4acd-bd55-6a1fed1aa26b)
+
 ## Installation
 
 1. **Clone the Repository**:
