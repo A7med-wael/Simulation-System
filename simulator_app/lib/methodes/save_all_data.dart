@@ -1,9 +1,8 @@
 import 'dart:io';
 import 'package:excel/excel.dart';
-import 'package:file_picker/file_picker.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:flutter/material.dart';
-import 'package:simulator_app/models/customer_event.dart';
-
+import '../models/customer_event.dart';
 import '../widgets/custom_dilog.dart';
 
 void saveAllData({
@@ -17,76 +16,52 @@ void saveAllData({
       title: "Warning",
       description: "No data to save!",
     );
-    // showDialog(
-    //   context: context,
-    //   builder: (context) => AlertDialog(
-    //     title: const Text("Warning"),
-    //     content: const Text("No data to save!"),
-    //     actions: [
-    //       TextButton(
-    //         onPressed: () => Navigator.of(context).pop(),
-    //         child: const Text("OK"),
-    //       ),
-    //     ],
-    //   ),
-    // );
     return;
   }
 
   try {
-    String? filePath = await FilePicker.platform.saveFile(
-      dialogTitle: 'Save Excel File',
-      fileName: 'simulation_data.xlsx',
-    );
+    // Get the documents directory
+    final directory = await getApplicationDocumentsDirectory();
+    final String filePath = '${directory.path}/simulation_data.xlsx';
 
-    if (filePath != null) {
-      var excel = Excel.createExcel();
-      Sheet sheet = excel['Sheet1'];
+    // Create an Excel file
+    var excel = Excel.createExcel();
+    Sheet sheet = excel['Sheet1'];
 
+    // Add headers
+    sheet.appendRow([
+      'Customer ID',
+      'Event Type',
+      'Clock Time',
+      'Service Code',
+      'Service Title',
+      'Service Duration',
+      'End Time'
+    ]);
+
+    // Add data rows
+    for (var event in currentData) {
       sheet.appendRow([
-        'Customer ID',
-        'Event Type',
-        'Clock Time',
-        'Service Code',
-        'Service Title',
-        'Service Duration',
-        'End Time'
+        event.customerId,
+        event.eventType,
+        event.clockTime,
+        event.serviceCode,
+        event.serviceTitle,
+        event.serviceDuration,
+        event.endTime,
       ]);
-
-      for (var event in currentData) {
-        sheet.appendRow([
-          event.customerId,
-          event.eventType,
-          event.clockTime,
-          event.serviceCode,
-          event.serviceTitle,
-          event.serviceDuration,
-          event.endTime,
-        ]);
-      }
-
-      List<int> bytes = excel.encode() ?? [];
-      File(filePath).writeAsBytesSync(bytes);
-      CustomDialog.showCustomDialog(
-        dialogType: DialogType.Success,
-        context: context,
-        title: "Success",
-        description: "Data saved successfully!",
-      );
-      // showDialog(
-      //   context: context,
-      //   builder: (context) => AlertDialog(
-      //     title: const Text("Success"),
-      //     content: const Text("Data saved successfully!"),
-      //     actions: [
-      //       TextButton(
-      //         onPressed: () => Navigator.of(context).pop(),
-      //         child: const Text("OK"),
-      //       ),
-      //     ],
-      //   ),
-      // );
     }
+
+    // Save the Excel file
+    List<int> bytes = excel.encode() ?? [];
+    File(filePath).writeAsBytesSync(bytes);
+
+    CustomDialog.showCustomDialog(
+      dialogType: DialogType.Success,
+      context: context,
+      title: "Success",
+      description: "Data saved to: $filePath",
+    );
   } catch (e) {
     CustomDialog.showCustomDialog(
       dialogType: DialogType.Failure,
@@ -94,18 +69,5 @@ void saveAllData({
       title: 'Error',
       description: "Failed to save data: ${e.toString()}",
     );
-    // showDialog(
-    //   context: context,
-    //   builder: (context) => AlertDialog(
-    //     title: const Text("Error"),
-    //     content: Text("Failed to save data: ${e.toString()}"),
-    //     actions: [
-    //       TextButton(
-    //         onPressed: () => Navigator.of(context).pop(),
-    //         child: const Text("OK"),
-    //       ),
-    //     ],
-    //   ),
-    // );
   }
 }

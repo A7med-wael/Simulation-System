@@ -64,7 +64,7 @@ class _HomePageState extends State<HomePage> {
                 color: PrimaryColor,
               ),
               child: Text(
-                'Can not serve mysilf',
+                'Hi, there',
                 style: TextStyle(
                   color: Colors.white,
                   fontSize: 24,
@@ -122,9 +122,6 @@ class _HomePageState extends State<HomePage> {
         decoration: BoxDecoration(
           gradient: LinearGradient(
               colors: [
-                // Color.fromARGB(255, 108, 140, 156),
-                // Color.fromARGB(255, 172, 199, 212)
-                // Colors.red, Colors.green
                 Color(0xff022b3a),
                 Color(0xff1f7a8c),
               ],

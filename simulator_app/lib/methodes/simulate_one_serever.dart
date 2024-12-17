@@ -16,26 +16,7 @@ void simulateOneServer({
         description:
             'No services available! Please add services first or upload an Excel file.',
         dialogType: DialogType.Failure);
-    // CustomDialog.showCustomDialog(
-    //   context: context,
-    //   title: "Error",
-    // description:
-    //     'No services available! Please add services first or upload an Excel file.',
-    // );
-    // showDialog(
-    //   context: context,
-    //   builder: (context) => AlertDialog(
-    //     title: const Text('Error'),
-    //     content: const Text(
-    //         'No services available! Please add services first or upload an Excel file.'),
-    //     actions: [
-    //       TextButton(
-    //         onPressed: () => Navigator.of(context).pop(),
-    //         child: const Text('OK'),
-    //       ),
-    //     ],
-    //   ),
-    // );
+
     return;
   }
 
@@ -43,7 +24,8 @@ void simulateOneServer({
   Map<String, dynamic> endtime = {};
 
   try {
-    int customerCount = Random().nextInt(6) + 5;
+    int customerCount =
+        Random().nextInt(6) + 5; // Random customers between 5-10
     int arrivalTime = 0;
 
     for (int i = 1; i <= customerCount; i++) {
@@ -91,26 +73,31 @@ void simulateOneServer({
     currentData.clear();
     currentData.addAll(tempEvents);
 
+    // Calculate statistics
+    int totalCustomers = customerCount;
+    int totalTime = tempEvents
+        .where((e) => e.eventType == "Departure")
+        .map((e) => int.parse(e.clockTime))
+        .reduce((a, b) => max(a, b));
+    int totalServiceTime = tempEvents
+        .where((e) => e.eventType == "Arrival")
+        .map((e) => int.parse(e.serviceDuration))
+        .fold(0, (prev, curr) => prev + curr);
+    double averageServiceTime =
+        totalCustomers > 0 ? totalServiceTime / totalCustomers : 0;
+
     updateDisplays();
     CustomDialog.showCustomDialog(
       dialogType: DialogType.Success,
       context: context,
       title: "Simulation Complete",
-      description: 'Simulation process completed successfully!',
+      description: 'Simulation completed successfully!\n\n'
+          'Statistics:\n'
+          '- Total Customers: $totalCustomers\n'
+          '- Total Simulation Time: $totalTime units\n'
+          '- Total Service Time: $totalServiceTime units\n'
+          '- Average Service Duration: ${averageServiceTime.toStringAsFixed(2)} units',
     );
-    // showDialog(
-    //   context: context,
-    //   builder: (context) => AlertDialog(
-    //     title: const Text('Simulation Complete'),
-    //     content: const Text('Simulation process completed successfully!'),
-    //     actions: [
-    //       TextButton(
-    //         onPressed: () => Navigator.of(context).pop(),
-    //         child: const Text('OK'),
-    //       ),
-    //     ],
-    //   ),
-    // );
   } catch (e) {
     showDialog(
       context: context,

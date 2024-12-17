@@ -91,8 +91,8 @@ class CustomDialog {
           SizedBox(height: 8),
           Text(
             description,
-            style: TextStyle(fontSize: 16, color: Colors.black54),
-            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 16, color: Colors.black87),
+            textAlign: TextAlign.start,
           ),
           SizedBox(height: 16),
           Row(

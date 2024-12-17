@@ -1,7 +1,6 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:simulator_app/models/customer_event.dart';
-
 import '../widgets/custom_dilog.dart';
 
 void simulateTwoServers({
@@ -18,25 +17,21 @@ void simulateTwoServers({
       description:
           'No services available! Please add services first or upload an Excel file.',
     );
-    // showDialog(
-    //   context: context,
-    //   builder: (context) => AlertDialog(
-    //     title: const Text('Error'),
-    //     content: const Text('No services available! Please add services first or upload an Excel file.'),
-    //     actions: [
-    //       TextButton(
-    //         onPressed: () => Navigator.of(context).pop(),
-    //         child: const Text('OK'),
-    //       ),
-    //     ],
-    //   ),
-    // );
+
     return;
   }
 
   List<CustomerEvent> tempEvents = [];
   Map<String, dynamic> endtimeServer1 = {};
   Map<String, dynamic> endtimeServer2 = {};
+
+  // Statistics trackers
+  int totalServiceTimeServer1 = 0;
+  int totalServiceTimeServer2 = 0;
+  int totalCustomersServer1 = 0;
+  int totalCustomersServer2 = 0;
+  int totalWaitingTime = 0;
+  int totalCustomers = 0;
 
   try {
     int customerCount =
@@ -64,27 +59,48 @@ void simulateTwoServers({
         serverAssigned = "Server 1";
         endtimeServer1[randomServiceKey] = arrivalTime + serviceDuration;
         serverEnd = endtimeServer1[randomServiceKey]!;
+
+        totalServiceTimeServer1 += serviceDuration;
+        totalCustomersServer1++;
       } else if (!endtimeServer2.containsKey(randomServiceKey) ||
           (endtimeServer2[randomServiceKey]! <= arrivalTime)) {
         // Assign to Server 2
         serverAssigned = "Server 2";
         endtimeServer2[randomServiceKey] = arrivalTime + serviceDuration;
         serverEnd = endtimeServer2[randomServiceKey]!;
+
+        totalServiceTimeServer2 += serviceDuration;
+        totalCustomersServer2++;
       } else {
         // Both servers busy; assign to the one that becomes available first
         if (endtimeServer1[randomServiceKey]! <=
             endtimeServer2[randomServiceKey]!) {
           serverAssigned = "Server 1";
+          totalWaitingTime +=
+              (endtimeServer1[randomServiceKey]! - arrivalTime) as int;
           arrivalTime = endtimeServer1[randomServiceKey]!;
+
           endtimeServer1[randomServiceKey] = arrivalTime + serviceDuration;
           serverEnd = endtimeServer1[randomServiceKey]!;
+
+          totalServiceTimeServer1 += serviceDuration;
+          totalCustomersServer1++;
         } else {
           serverAssigned = "Server 2";
+          totalWaitingTime +=
+              (endtimeServer2[randomServiceKey]! - arrivalTime) as int;
           arrivalTime = endtimeServer2[randomServiceKey]!;
+
           endtimeServer2[randomServiceKey] = arrivalTime + serviceDuration;
           serverEnd = endtimeServer2[randomServiceKey]!;
+
+          totalServiceTimeServer2 += serviceDuration;
+          totalCustomersServer2++;
         }
       }
+
+      // Increment total customer count
+      totalCustomers++;
 
       // Add customer arrival and departure events
       tempEvents.add(CustomerEvent(
@@ -117,27 +133,40 @@ void simulateTwoServers({
     currentData.clear();
     currentData.addAll(tempEvents);
 
+    // Final statistics
+    double averageServiceTimeServer1 = totalCustomersServer1 == 0
+        ? 0
+        : totalServiceTimeServer1 / totalCustomersServer1;
+    double averageServiceTimeServer2 = totalCustomersServer2 == 0
+        ? 0
+        : totalServiceTimeServer2 / totalCustomersServer2;
+    double averageWaitingTime =
+        totalCustomers == 0 ? 0 : totalWaitingTime / totalCustomers;
+
     updateDisplays();
+
+    // Show success dialog with statistics
     CustomDialog.showCustomDialog(
       dialogType: DialogType.Success,
       context: context,
       title: 'Simulation Complete',
-      description: 'Simulation with two servers completed successfully!',
+      description: '''
+Simulation with two servers completed successfully!
+
+ Statistics : 
+Total Customers: $totalCustomers
+Server 1:
+- Total Customers: $totalCustomersServer1
+- Average Service Time: ${averageServiceTimeServer1.toStringAsFixed(2)} units
+
+Server 2:
+- Total Customers: $totalCustomersServer2
+- Average Service Time: ${averageServiceTimeServer2.toStringAsFixed(2)} units
+
+Overall:
+- Average Waiting Time: ${averageWaitingTime.toStringAsFixed(2)} units
+''',
     );
-    // showDialog(
-    //   context: context,
-    //   builder: (context) => AlertDialog(
-    //     title: const Text('Simulation Complete'),
-    //     content:
-    //         const Text('Simulation with two servers completed successfully!'),
-    //     actions: [
-    //       TextButton(
-    //         onPressed: () => Navigator.of(context).pop(),
-    //         child: const Text('OK'),
-    //       ),
-    //     ],
-    //   ),
-    // );
   } catch (e) {
     CustomDialog.showCustomDialog(
       dialogType: DialogType.Failure,
@@ -145,18 +174,5 @@ void simulateTwoServers({
       title: 'Error',
       description: 'Failed to generate customers: $e',
     );
-    // showDialog(
-    //   context: context,
-    //   builder: (context) => AlertDialog(
-    //     title: const Text('Error'),
-    //     content: Text('Failed to generate customers: $e'),
-    //     actions: [
-    //       TextButton(
-    //         onPressed: () => Navigator.of(context).pop(),
-    //         child: const Text('OK'),
-    //       ),
-    //     ],
-    //   ),
-    // );
   }
 }

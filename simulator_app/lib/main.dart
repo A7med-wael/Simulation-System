@@ -1,20 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:simulator_app/pages/home_page.dart';
+import 'package:simulator_app/simulator_app.dart';
 
-void main() {
-  runApp(
-    SimulationClockTable(),
-  );
-}
-
-class SimulationClockTable extends StatelessWidget {
-  const SimulationClockTable({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      home: HomePage(),
-    );
-  }
-}
+void main() => runApp(SimulationClockTable());
