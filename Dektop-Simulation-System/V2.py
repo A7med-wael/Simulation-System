@@ -77,22 +77,61 @@ class QueuingSystemGUI:
         self.create_tooltip(self.theme_switch, "Toggle Dark/Light Mode")
 
     def clear_all_data(self) -> None:
-        """Clear all current data and reset displays."""
-        if messagebox.askyesno("Confirm Clear", "Are you sure you want to clear all data?"):
-            try:
-                self.current_data = pd.DataFrame(columns=[
-                    'Customer ID', 'Event Type', 'Clock Time', 'Service Code', 
-                    'Service Title', 'Service Duration', 'End Time'
-                ])
-                
-                # Hide data frames and show logo
-                self.hide_data_frames()
-                self.data_visible = False
-                
-                messagebox.showinfo("Success", "All data cleared successfully!")
+        """Clear all data from the tables and graph, keeping the containers visible and empty."""
+        try:
+            # Clear data from main data table
+            if hasattr(self, 'tree'):
+                for item in self.tree.get_children():
+                    self.tree.delete(item)
             
-            except Exception as e:
-                messagebox.showerror("Error", f"Failed to clear data: {str(e)}") 
+            # Clear data from parallel servers table
+            if hasattr(self, 'parallel_tree'):
+                for item in self.parallel_tree.get_children():
+                    self.parallel_tree.delete(item)
+
+            # Clear data from chronological events table
+            if hasattr(self, 'chrono_tree'):
+                for item in self.chrono_tree.get_children():
+                    self.chrono_tree.delete(item)
+
+            # Clear the graph
+            if hasattr(self, 'figure') and self.figure is not None:
+                self.ax.clear()  # Clear the axes
+                self.figure.canvas.draw()  # Redraw the canvas to show empty graph
+
+            # Optionally, reset any internal data structures
+            self.current_data = pd.DataFrame(columns=[
+                'Customer ID', 'Event Type', 'Clock Time', 
+                'Service Code', 'Service Title', 'Service Duration', 'End Time'
+            ])
+            self.services.clear()
+
+            # Show a message to indicate that all data has been cleared
+            messagebox.showinfo("Data Cleared", "All data has been cleared successfully!")
+        except Exception as e:
+            messagebox.showerror("Error", f"An error occurred while clearing data: {str(e)}")
+
+
+    # def clear_all_data(self) -> None:
+    #     """Clear all current data and reset displays."""
+    #     if messagebox.askyesno("Confirm Clear", "Are you sure you want to clear all data?"):
+    #         try:
+    #             self.current_data = pd.DataFrame(columns=[
+    #                 'Customer ID', 'Event Type', 'Clock Time', 'Service Code', 
+    #                 'Service Title', 'Service Duration', 'End Time'
+    #             ])
+                
+                
+    #             # Hide data frames and show logo
+    #             self.hide_data_frames()
+    #             self.data_visible = False
+
+    #             self.__init__()
+                
+    #             messagebox.showinfo("Success", "All data cleared successfully!")
+            
+    #         except Exception as e:
+    #             messagebox.showerror("Error", f"Failed to clear data: {str(e)}") 
 
     def setup_style(self) -> None:
         """Configure the application style to apply dark or light theme consistently across all widgets."""
@@ -981,45 +1020,118 @@ class QueuingSystemGUI:
         except Exception as e:
             messagebox.showerror("Error", str(e))
 
+
+    
+    # Add the function to upload and process the Excel file
     def upload_Parallel_Server_file(self) -> None:
-        """Upload probability data from Excel file."""
+        """Upload data from Excel file with combined Arrival and Server data."""
         try:
-            file_path = filedialog.askopenfilename(
-                filetypes=[("Excel files", "*.xlsx"), ("CSV files", "*.csv")])
-            
+            # Open file dialog for selecting the Excel file
+            file_path = filedialog.askopenfilename(filetypes=[("Excel files", "*.xlsx *.xls")])
             if not file_path:
+                messagebox.showwarning("Warning", "No file selected!")
                 return
 
-            df = pd.read_excel(file_path) if file_path.endswith('.xlsx') else pd.read_csv(file_path)
-            
-            # Clear existing data
-            for item in self.arrival_tree.get_children():
-                self.arrival_tree.delete(item)
-            for item in self.server_tree.get_children():
-                self.server_tree.delete(item)
+            # Read Excel file into DataFrame
+            try:
+                excel_data = pd.read_excel(file_path)
+            except Exception as e:
+                raise ValueError(f"Error reading Excel file: {e}")
 
-            # Process arrival probability data
-            arrival_cols = list(self.arrival_entries.keys())
-            if all(col in df.columns for col in arrival_cols):
-                arrival_data = df[arrival_cols].values.tolist()
-                for row in arrival_data:
-                    if not pd.isna(row).any():  # Skip rows with missing values
-                        self.arrival_tree.insert("", "end", values=row)
-                self.arrival_data = arrival_data
+            # Check for required columns in the sheet
+            required_columns = {'Time Between Arrivals', 'Probability (Arrival)', 'Service Time', 'Probability (Service)'}
+            if not required_columns.issubset(excel_data.columns):
+                raise ValueError("Excel file is missing one or more required columns: "
+                                "'Time Between Arrivals', 'Probability (Arrival)', 'Service Time', 'Probability (Service)'")
 
-            # Process server data
-            server_cols = list(self.server_entries.keys())
-            if all(col in df.columns for col in server_cols):
-                server_data = df[server_cols].values.tolist()
-                for row in server_data:
-                    if not pd.isna(row).any():  # Skip rows with missing values
-                        self.server_tree.insert("", "end", values=row)
-                    self.server_data[int(self.server_var.get())] = server_data
+            # Clear existing data in TreeViews
+            for child in self.arrival_tree.get_children():
+                self.arrival_tree.delete(child)
+            for child in self.server_tree.get_children():
+                self.server_tree.delete(child)
 
-            messagebox.showinfo("Success", "Data uploaded successfully!")
+            # Process Arrival Data
+            cumulative_prob = 0
+            digit_from = 0
+            for _, row in excel_data.iterrows():
+                time_between = int(row['Time Between Arrivals'])
+                probability = float(row['Probability (Arrival)'])
+                cumulative_prob += probability
+                digit_to = digit_from + int(probability * 100) - 1  # Assign digits
 
+                self.arrival_tree.insert("", "end", values=(
+                    time_between,
+                    probability,
+                    round(cumulative_prob, 2),
+                    digit_from,
+                    digit_to
+                ))
+                digit_from = digit_to + 1
+
+            # Process Server Data
+            cumulative_prob = 0
+            digit_from = 0
+            for _, row in excel_data.iterrows():
+                service_time = int(row['Service Time'])
+                probability = float(row['Probability (Service)'])
+                cumulative_prob += probability
+                digit_to = digit_from + int(probability * 100) - 1
+
+                self.server_tree.insert("", "end", values=(
+                    service_time,
+                    probability,
+                    round(cumulative_prob, 2),
+                    digit_from,
+                    digit_to
+                ))
+                digit_from = digit_to + 1
+
+            messagebox.showinfo("Success", "Data uploaded and populated successfully!")
+
+        except ValueError as ve:
+            messagebox.showerror("Error", f"Upload failed: {ve}")
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to upload data: {str(e)}")
+            messagebox.showerror("Error", f"An unexpected error occurred: {e}")
+
+    # def upload_Parallel_Server_file(self) -> None:
+    #     """Upload probability data from Excel file."""
+    #     try:
+    #         file_path = filedialog.askopenfilename(
+    #             filetypes=[("Excel files", "*.xlsx"), ("CSV files", "*.csv")])
+            
+    #         if not file_path:
+    #             return
+
+    #         df = pd.read_excel(file_path) if file_path.endswith('.xlsx') else pd.read_csv(file_path)
+            
+    #         # Clear existing data
+    #         for item in self.arrival_tree.get_children():
+    #             self.arrival_tree.delete(item)
+    #         for item in self.server_tree.get_children():
+    #             self.server_tree.delete(item)
+
+    #         # Process arrival probability data
+    #         arrival_cols = list(self.arrival_entries.keys())
+    #         if all(col in df.columns for col in arrival_cols):
+    #             arrival_data = df[arrival_cols].values.tolist()
+    #             for row in arrival_data:
+    #                 if not pd.isna(row).any():  # Skip rows with missing values
+    #                     self.arrival_tree.insert("", "end", values=row)
+    #             self.arrival_data = arrival_data
+
+    #         # Process server data
+    #         server_cols = list(self.server_entries.keys())
+    #         if all(col in df.columns for col in server_cols):
+    #             server_data = df[server_cols].values.tolist()
+    #             for row in server_data:
+    #                 if not pd.isna(row).any():  # Skip rows with missing values
+    #                     self.server_tree.insert("", "end", values=row)
+    #                 self.server_data[int(self.server_var.get())] = server_data
+
+    #         messagebox.showinfo("Success", "Data uploaded successfully!")
+
+    #     except Exception as e:
+    #         messagebox.showerror("Error", f"Failed to upload data: {str(e)}")
 
     def save_Parellel_server_data(self) -> None:
         """Save probability data to Excel file."""
@@ -1046,11 +1158,13 @@ class QueuingSystemGUI:
         except Exception as e:
             messagebox.showerror("Error", f"Failed to save data: {str(e)}")
 
+
     def run_parallel_simulation(self) -> None:
         """Run the parallel server simulation."""
         try:
-            self.simulation_type = "parallel" 
+            self.simulation_type = "parallel"
             self.update_displays()
+
             # Collect and convert data from trees
             arrival_data = [
                 {
@@ -1061,6 +1175,7 @@ class QueuingSystemGUI:
                     'Digit Assignment To': int(item[4])
                 }
                 for item in (self.arrival_tree.item(child)["values"] for child in self.arrival_tree.get_children())
+                if len(item) == 5  # Ensure all required fields are present
             ]
 
             server_data = [
@@ -1072,12 +1187,16 @@ class QueuingSystemGUI:
                     'Digit Assignment To': int(item[4])
                 }
                 for item in (self.server_tree.item(child)["values"] for child in self.server_tree.get_children())
+                if len(item) == 5  # Ensure all required fields are present
             ]
 
-            if not all([arrival_data, server_data]):
-                raise ValueError("Please ensure all probability tables have data")
+            # Check if data exists
+            if not arrival_data:
+                raise ValueError("Arrival Data table is empty or incomplete.")
+            if not server_data:
+                raise ValueError("Server Data table is empty or incomplete.")
 
-            # Simulation parameters
+            # Continue with simulation parameters...
             simulation_period = timedelta(hours=1)
             servers = {'Able': {'available_from': timedelta(0), 'service_times': []},
                     'Baker': {'available_from': timedelta(0), 'service_times': []}}
@@ -1091,12 +1210,13 @@ class QueuingSystemGUI:
                         return row[key_name]
                 raise ValueError(f"No matching entry found in the probability table for random value: {random_value}")
 
-            # Run simulation for each customer
+            # Run simulation
             while arrival_time < simulation_period:
                 random_value = random.random()
                 time_between_arrivals = get_time_from_probability_table(random_value, arrival_data, 'Time Between Arrivals')
                 arrival_time += timedelta(minutes=time_between_arrivals)
 
+                # Assign servers
                 if servers['Able']['available_from'] <= arrival_time:
                     assigned_server = 'Able'
                 elif servers['Baker']['available_from'] <= arrival_time:
@@ -1110,13 +1230,12 @@ class QueuingSystemGUI:
                 start_time = max(arrival_time, servers[assigned_server]['available_from'])
                 end_time = start_time + timedelta(minutes=service_time)
 
-                # Modified customer info to match the graph function's expected format
                 customer_info = {
                     'Customer ID': len(customers) + 1,
-                    'Clock Time': arrival_time.total_seconds() / 60,  # Convert to minutes
+                    'Clock Time': arrival_time.total_seconds() / 60,
                     'Event Type': 'Arrival',
                     'Service Duration': service_time,
-                    'End Time': end_time.total_seconds() / 60,  # Convert to minutes
+                    'End Time': end_time.total_seconds() / 60,
                     'Server': assigned_server,
                     'Wait Time': (start_time - arrival_time).total_seconds() / 60,
                     'Service Time': service_time
@@ -1126,11 +1245,10 @@ class QueuingSystemGUI:
                 servers[assigned_server]['available_from'] = end_time
                 servers[assigned_server]['service_times'].append(service_time)
 
-            # Create DataFrame with the modified structure
+            # Display results
             df_customers = pd.DataFrame(customers)
             self.current_data = df_customers
 
-            # Calculate metrics
             total_simulation_time = simulation_period.total_seconds() / 60
             able_busy_time = min(sum(servers['Able']['service_times']), total_simulation_time)
             baker_busy_time = min(sum(servers['Baker']['service_times']), total_simulation_time)
@@ -1142,14 +1260,122 @@ class QueuingSystemGUI:
                 'Total Customers': len(customers)
             }
 
-
             self.show_data_frames()
             self.update_displays()
             metrics_text = "\n".join(f"{k}: {v}" for k, v in metrics.items())
             messagebox.showinfo("Simulation Complete", f"Simulation Results:\n\n{metrics_text}")
 
+        except ValueError as ve:
+            messagebox.showerror("Error", f"Simulation failed: {str(ve)}")
         except Exception as e:
-            messagebox.showerror("Error", f"Simulation failed: {str(e)}")
+            messagebox.showerror("Error", f"Simulation failed due to an unexpected error: {str(e)}")
+
+
+
+    # def run_parallel_simulation(self) -> None:
+    #     """Run the parallel server simulation."""
+    #     try:
+    #         self.simulation_type = "parallel" 
+    #         self.update_displays()
+    #         # Collect and convert data from trees
+    #         arrival_data = [
+    #             {
+    #                 'Time Between Arrivals': int(item[0]),
+    #                 'Probability': float(item[1]),
+    #                 'Cumulative Probability': float(item[2]),
+    #                 'Digit Assignment From': int(item[3]),
+    #                 'Digit Assignment To': int(item[4])
+    #             }
+    #             for item in (self.arrival_tree.item(child)["values"] for child in self.arrival_tree.get_children())
+    #         ]
+
+    #         server_data = [
+    #             {
+    #                 'Service Time': int(item[0]),
+    #                 'Probability': float(item[1]),
+    #                 'Cumulative Probability': float(item[2]),
+    #                 'Digit Assignment From': int(item[3]),
+    #                 'Digit Assignment To': int(item[4])
+    #             }
+    #             for item in (self.server_tree.item(child)["values"] for child in self.server_tree.get_children())
+    #         ]
+
+    #         if not all([arrival_data, server_data]):
+    #             raise ValueError("Please ensure all probability tables have data")
+
+    #         # Simulation parameters
+    #         simulation_period = timedelta(hours=1)
+    #         servers = {'Able': {'available_from': timedelta(0), 'service_times': []},
+    #                 'Baker': {'available_from': timedelta(0), 'service_times': []}}
+
+    #         customers = []
+    #         arrival_time = timedelta(0)
+
+    #         def get_time_from_probability_table(random_value, probability_table, key_name):
+    #             for row in probability_table:
+    #                 if random_value <= row['Cumulative Probability']:
+    #                     return row[key_name]
+    #             raise ValueError(f"No matching entry found in the probability table for random value: {random_value}")
+
+    #         # Run simulation for each customer
+    #         while arrival_time < simulation_period:
+    #             random_value = random.random()
+    #             time_between_arrivals = get_time_from_probability_table(random_value, arrival_data, 'Time Between Arrivals')
+    #             arrival_time += timedelta(minutes=time_between_arrivals)
+
+    #             if servers['Able']['available_from'] <= arrival_time:
+    #                 assigned_server = 'Able'
+    #             elif servers['Baker']['available_from'] <= arrival_time:
+    #                 assigned_server = 'Baker'
+    #             else:
+    #                 assigned_server = 'Able' if servers['Able']['available_from'] < servers['Baker']['available_from'] else 'Baker'
+
+    #             random_value = random.random()
+    #             service_time = get_time_from_probability_table(random_value, server_data, 'Service Time')
+
+    #             start_time = max(arrival_time, servers[assigned_server]['available_from'])
+    #             end_time = start_time + timedelta(minutes=service_time)
+
+    #             # Modified customer info to match the graph function's expected format
+    #             customer_info = {
+    #                 'Customer ID': len(customers) + 1,
+    #                 'Clock Time': arrival_time.total_seconds() / 60,  # Convert to minutes
+    #                 'Event Type': 'Arrival',
+    #                 'Service Duration': service_time,
+    #                 'End Time': end_time.total_seconds() / 60,  # Convert to minutes
+    #                 'Server': assigned_server,
+    #                 'Wait Time': (start_time - arrival_time).total_seconds() / 60,
+    #                 'Service Time': service_time
+    #             }
+    #             customers.append(customer_info)
+
+    #             servers[assigned_server]['available_from'] = end_time
+    #             servers[assigned_server]['service_times'].append(service_time)
+
+    #         # Create DataFrame with the modified structure
+    #         df_customers = pd.DataFrame(customers)
+    #         self.current_data = df_customers
+
+    #         # Calculate metrics
+    #         total_simulation_time = simulation_period.total_seconds() / 60
+    #         able_busy_time = min(sum(servers['Able']['service_times']), total_simulation_time)
+    #         baker_busy_time = min(sum(servers['Baker']['service_times']), total_simulation_time)
+
+    #         metrics = {
+    #             'Able Utilization Rate': f"{min(able_busy_time / total_simulation_time, 1.0):.2%}",
+    #             'Baker Utilization Rate': f"{min(baker_busy_time / total_simulation_time, 1.0):.2%}",
+    #             'Average Waiting Time': f"{df_customers['Wait Time'].mean():.2f} minutes",
+    #             'Total Customers': len(customers)
+    #         }
+
+
+    #         self.show_data_frames()
+    #         self.update_displays()
+    #         metrics_text = "\n".join(f"{k}: {v}" for k, v in metrics.items())
+    #         messagebox.showinfo("Simulation Complete", f"Simulation Results:\n\n{metrics_text}")
+
+    #     except Exception as e:
+    #         messagebox.showerror("Error", f"Simulation failed: {str(e)}")
 
     def update_displays(self) -> None:
         """Update all displays with current data, optionally showing probability columns."""
